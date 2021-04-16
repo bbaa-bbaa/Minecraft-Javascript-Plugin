@@ -14,7 +14,7 @@ class Status extends BasePlugin {
   constructor() {
     super(...arguments);
     this.Info = { cpu: {}, network: {} };
-    this.LoopId=0;
+    this.LoopId = 0;
     this.LastMspt = 0;
     this.MSPTDiffCount = 0;
   }
@@ -91,9 +91,9 @@ class Status extends BasePlugin {
             }
             this.LastMspt = MSPT;
             if (MSPTDiff > 0) {
-              this.MSPTDiffCount++;
+              this.MSPTDiffCount += MSPT > 40 ? 2 : 1;
             } else {
-              this.MSPTDiffCount--;
+              this.MSPTDiffCount -= MSPT < 10 ? 2 : 1;
             }
             if (MSPTDiff != 0) {
               console.log(`负载异动:${this.MSPTDiffCount}`);
@@ -113,7 +113,7 @@ class Status extends BasePlugin {
               ).catch(() => {});
               this.MSPTDiffCount = 0;
             }
-            if (this.MSPTDiffCount <= (TPS < 18 ? 4 : 2)) {
+            if (this.MSPTDiffCount <= -(TPS < 18 ? 4 : 2)) {
               this.CommandSender(
                 `tellraw @a ${JSON.stringify([
                   { text: "[监控系统]", color: "green", bold: true },
@@ -148,12 +148,12 @@ class Status extends BasePlugin {
       .catch(() => {});
   }
   Start() {
-    this.LoopId=setInterval(() => {
+    this.LoopId = setInterval(() => {
       this.status().catch(() => {});
     }, 3000);
   }
-  Pause(){
-    clearInterval(this.LoopId)
+  Pause() {
+    clearInterval(this.LoopId);
   }
 }
 module.exports = Status;

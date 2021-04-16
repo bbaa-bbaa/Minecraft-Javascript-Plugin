@@ -7,7 +7,30 @@ class BasePlugin {
     this.Scoreboard_Prefix = hash.update(this.constructor.name).digest("hex");
   }
   CommandSender() {
-    return this.Core.RconClient.send(...arguments).catch(this.Core.ErrorHandle);
+    return this.Core.RconClient.send(...arguments).catch(this.Core.ErrorHandle.bind(this.Core));
+  }
+  async tellraw(Dest, Json) {
+    let startWith = `tellraw ${Dest} `;
+    let newJson = [[]];
+    for (let Item of Json) {
+      if (/^\n/.test(Item.text) && /\n$/.test(Item.text)) {
+        Item.text = Item.text.toString().replace(/^\n/, "");
+        newJson.push([Item]);
+      } else if (/\n$/.test(Item.text)) {
+        Item.text = Item.text.toString().replace(/\n$/, "");
+        newJson[newJson.length - 1].push(Item);
+        newJson.push([]);
+      } else if (/^\n/.test(Item.text)) {
+        Item.text = Item.text.toString().replace(/^\n/, "");
+        newJson.push([Item]);
+      } else {
+        Item.text = Item.text.toString()
+        newJson[newJson.length - 1].push(Item);
+      }
+    }
+    for (let msg of newJson) {
+      await this.CommandSender(startWith + JSON.stringify(msg));
+    }
   }
   async getAllScore() {
     let Score = this.Core.PluginInterfaces.Scoreboard.Scores;

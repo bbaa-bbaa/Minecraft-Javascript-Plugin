@@ -4,21 +4,36 @@ const cp = require("child_process");
 const moment = require("moment");
 const EventEmitter = require("events");
 const LogFileReader = require(__dirname + "/LogFileReader");
+const util = require("util");
+const runCommand = util.promisify(cp.exec);
 class PluginCore {
   constructor(options) {
     console.log(`Plugins Core 启动`);
     this.RconClient = {};
     this.EventBus = new EventEmitter();
-    this.LogFileReader = new LogFileReader(this);
-    this.LogFile = options.log;
+    this.LogFileReader = {};
+    this.LogFile = options.BaseDir + "/logs/latest.log";
+    this.BaseDir = options.BaseDir;
     this.options = options;
     this.PluginRegisters = [];
     this.NativeLogProcessers = [];
     this.PluginInterfaces = {};
+    this.Crashed=false;
+    this.Error=false;
     this.connectRconClient(options);
     this.addPluginRegister(this.registerNativeLogProcesser, this);
     this.addPluginRegister(this.addPluginRegister, this);
     this.loadBuiltinPlugins();
+    this.crashDetect()
+    this.EventBus.on("disconnected", () => {
+      this.Disconnected();
+    });
+    this.EventBus.on("connected", this.Connected.bind(this));
+  }
+  crashDetect(){
+    fs.watch(this.BaseDir+"/crash-reports/",{},(e,f)=>{
+      this.Crashed=true;
+    })
   }
   loadBuiltinPlugins() {
     this.registerPlugin(require(__dirname + "/plugins/simpleCommand.js"));
@@ -52,37 +67,46 @@ class PluginCore {
     this.NativeLogProcessers.push({ regexp: regexp, func: func, scope: scope });
   }
   connectRconClient(options) {
-    this.EventBus.on("connected", this.Connected.bind(this));
-    return Rcon.connect(options.Rcon).then(Rcon => {
-      this.RconClient = Rcon;
-      this.RconClient.on("error", this.ErrorHandle.bind(this));
-      this.EventBus.emit("connected");
-    }).catch(()=>{this.ErrorHandle()});
+    return Rcon.connect(options.Rcon)
+      .then(Rcon => {
+        this.RconClient = Rcon;
+        this.RconClient.on("error", this.ErrorHandle.bind(this));
+        this.EventBus.emit("connected");
+      })
+      .catch(() => {
+        this.ErrorHandle();
+      });
   }
   Connected() {
-    this.WatchFile();
+    this.LogFileReader = new LogFileReader(this, this.LogFile);
     for (let Plugin of Object.values(this.PluginInterfaces)) {
       if (Plugin.Start) {
         Plugin.Start.call(Plugin);
       }
     }
     console.log("Rcon Connected");
+    this.Error=false;
   }
-  async WatchFile() {
-    this.LogFileReader.Handle = await fs.promises.open(this.LogFile, "r");
-    this.LogFileReader.Pos = (await fs.promises.stat(this.LogFile)).size;
-    fs.watchFile(this.LogFile, { interval: 100 }, this.LogFileReader.readPartFile.bind(this.LogFileReader));
-  }
-  ErrorHandle() {
-    if (this.RconClient.socket && this.RconClient.socket.destoryed||!this.RconClient.socket) {
-      this.EventBus.emit("disconnected");
-      for (let Plugin of Object.values(this.PluginInterfaces)) {
-        if (Plugin.Pause) {
-          Plugin.Pause.call(Plugin);
-        }
+  Disconnected() {
+    for (let Plugin of Object.values(this.PluginInterfaces)) {
+      if (Plugin.Pause) {
+        Plugin.Pause.call(Plugin);
       }
+    }
+    if (this.LogFileReader.close) {
+      this.LogFileReader.close();
+    }
+  }
+  async ErrorHandle(a) {
+    console.error(a);
+    if (((this.RconClient.socket && this.RconClient.socket.destoryed) || !this.RconClient.socket)&&!this.Error) {
+      this.Error=true;
+      this.EventBus.emit("disconnected");
       console.log("发生错误10s后重新链接");
-      fs.unwatchFile(this.LogFile);
+      if(this.Crashed){
+        this.Crashed=false;
+        await runCommand(`${this.Core.BaseDir}/runserver`)
+      }
       setTimeout(() => {
         this.connectRconClient(this.options).catch(() => {
           this.ErrorHandle();
@@ -97,7 +121,7 @@ class PluginCore {
         try {
           Processr.func.call(Processr.scope, line);
         } catch (e) {
-          console.error(e)
+          console.error(e);
         }
       }
     }
