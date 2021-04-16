@@ -1,9 +1,11 @@
-const fs = require("fs");
+const fs = require("fs-extra");
 class LogFileReader {
-  constructor(Core) {
+  constructor(Core,path) {
     this.Handle = null;
     this.Pos = 0;
     this.Core = Core;
+    this.path=path;
+    this.openLogFile()
   }
   readPartFile(curr, prev) {
     if(curr.size - this.Pos<=0) return
@@ -15,6 +17,15 @@ class LogFileReader {
         this.Core.ProcessLog(Line);
       }
     });
+  }
+  async openLogFile() {
+    this.Handle = await fs.promises.open(this.path, "r");
+    this.Pos = (await fs.promises.stat(this.path)).size;
+    fs.watchFile(this.path, { interval: 100 }, (...args)=>{this.readPartFile(...args)});
+  }
+  async close(){
+    fs.unwatchFile(this.path)
+    this.Handle.close();
   }
 }
 module.exports = LogFileReader;
