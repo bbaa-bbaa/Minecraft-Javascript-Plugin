@@ -21,6 +21,7 @@ class LogFileReader {
   async openLogFile() {
     this.Handle = await fs.promises.open(this.path, "r");
     this.Pos = (await fs.promises.stat(this.path)).size;
+    console.log("打开日志 位移"+this.Pos)
     fs.watchFile(this.path, { interval: 100 }, (...args)=>{this.readPartFile(...args)});
   }
   async close(){
