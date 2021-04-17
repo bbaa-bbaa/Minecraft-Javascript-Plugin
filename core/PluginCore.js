@@ -78,7 +78,9 @@ class PluginCore {
       });
   }
   Connected() {
+    setTimeout(()=>{
     this.LogFileReader = new LogFileReader(this, this.LogFile);
+    },1000);
     for (let Plugin of Object.values(this.PluginInterfaces)) {
       if (Plugin.Start) {
         Plugin.Start.call(Plugin);
