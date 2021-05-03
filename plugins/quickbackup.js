@@ -13,9 +13,17 @@ class QuickBackup extends BasePlugin {
     super(...arguments);
     this.schedule = null;
     this.backupDest = "/media/XiaoMi/mcSave";
+    this.wholeWorldDest = this.backupDest + "/World";
+    this.PlayerDataDest = this.backupDest + "/Playerdata";
     this.SaveSource = `${this.Core.BaseDir}/world`;
     this.RunServer = `${this.Core.BaseDir}/runserver`;
     this.backPending = {
+      Timer: 0,
+      choice: "",
+      waitLoop: 0,
+      waitCount: 0
+    };
+    this.backpdPending = {
       Timer: 0,
       choice: "",
       waitLoop: 0,
@@ -39,7 +47,7 @@ class QuickBackup extends BasePlugin {
     let List = [];
     switch (SubCommand) {
       case "list":
-        List = this.getBackupList();
+        List = this.getBackupList("wholeWorld");
         let Texts = [
           { text: `服务器上目前有`, color: "yellow" },
           { text: List.length, color: "aqua" },
@@ -69,6 +77,32 @@ class QuickBackup extends BasePlugin {
           );
         }
       case "help":
+      default:
+        await this.CommandSender(
+          `tellraw @a ${JSON.stringify([
+            { text: "[自动备份系统]", color: "green", bold: true },
+            { text: `======命令列表======\n`, color: "yellow", bold: true },
+            { text: "!!qb", color: "yellow" },
+            { text: " make ", color: "aqua" },
+            { text: "<备注信息> ", color: "red" },
+            { text: "-创建一个名为<备注信息>的备份\n", color: "aqua" },
+            { text: "!!qb", color: "yellow" },
+            { text: " list ", color: "aqua" },
+            { text: "- 显示所有备份列表\n", color: "aqua" },
+            { text: "!!qb", color: "yellow" },
+            { text: " back ", color: "aqua" },
+            { text: "[备注信息] ", color: "green" },
+            { text: "- 回档到指定存档\n", color: "aqua" },
+            { text: "!!qb", color: "yellow" },
+            { text: " delete ", color: "aqua" },
+            { text: "[备注信息] ", color: "green" },
+            { text: "- 删除指定存档\n", color: "aqua" },
+            { text: "!!qb", color: "yellow" },
+            { text: " backpd ", color: "aqua" },
+            { text: "[备注信息] ", color: "green" },
+            { text: "- BackPlayerData 恢复玩家数据", color: "aqua" }
+          ])}`
+        );
         break;
       case "back":
         if (args.length == 1) {
@@ -79,9 +113,10 @@ class QuickBackup extends BasePlugin {
               { text: "自助回档服务", color: "yellow" }
             ])}`
           );
-          this.showPage(0, "back");
+          this.Pending = "back";
+          this.showPage(0, "wholeWorld", "back");
         } else if (args.length == 2) {
-          let List = this.getBackupList();
+          let List = this.getBackupList("wholeWorld");
           List = List.filter(a => a.filename == args[1]);
           if (List.length == 0) {
             this.tellraw("@a", [
@@ -91,7 +126,8 @@ class QuickBackup extends BasePlugin {
             ]);
             return;
           }
-          this.Pending="back";
+          this.cancelAllPending();
+          this.Pending = "back";
           this.backPending.choice = List[0];
           this.tellraw("@a", [
             { text: "[备份系统]", color: "green", bold: true },
@@ -132,6 +168,70 @@ class QuickBackup extends BasePlugin {
           }, 10000);
         }
         break;
+      case "backpd":
+        if (args.length == 1) {
+          await this.CommandSender(
+            `tellraw @a ${JSON.stringify([
+              { text: "[备份系统]", color: "green", bold: true },
+              { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+              { text: "自助回档服务", color: "yellow" }
+            ])}`
+          );
+          this.Pending = "backpd";
+          this.showPage(0, "playerData", "backbd");
+        } else if (args.length == 2) {
+          let List = this.getBackupList("playerData");
+          List = List.filter(a => a.filename == args[1]);
+          if (List.length == 0) {
+            this.tellraw("@a", [
+              { text: "[备份系统]", color: "green", bold: true },
+              { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+              { text: `找不到你选择的备份`, color: "red", bold: true }
+            ]);
+            return;
+          }
+          this.cancelAllPending();
+          this.Pending = "backpd";
+          this.backpdPending.choice = List[0];
+          this.tellraw("@a", [
+            { text: "[备份系统]", color: "green", bold: true },
+            { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
+            { text: `你已经选择要恢复的备份\n`, color: "yellow", bold: false },
+            { text: `名称:`, color: "yellow", bold: false },
+            { text: this.backpdPending.choice.filename, color: "aqua", bold: true },
+            { text: `\n时间:`, color: "yellow", bold: false },
+            {
+              text: moment(this.backpdPending.choice.stats.mtimeMs).format("YYYY年MM月DD日 HH:mm:ss") + "\n",
+              color: "aqua",
+              bold: true
+            },
+            { text: `输入[`, color: "yellow", bold: false },
+            {
+              text: "!!qb confirm",
+              bold: true,
+              color: "aqua",
+              clickEvent: { action: "suggest_command", value: `!!qb confirm` }
+            },
+            { text: "]继续 ", color: "yellow", bold: false },
+            { text: `输入[`, color: "yellow", bold: false },
+            {
+              text: "!!qb cancel",
+              bold: true,
+              color: "aqua",
+              clickEvent: { action: "run_command", value: `!!qb cancel` }
+            },
+            { text: "]取消 ", color: "yellow", bold: false }
+          ]);
+          clearTimeout(this.backpdPending.Timer);
+          this.backpdPending.Timer = setTimeout(() => {
+            this.tellraw("@a", [
+              { text: "[备份系统]", color: "green", bold: true },
+              { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
+              { text: `回档操作取消\n`, color: "red", bold: false }
+            ]);
+          }, 10000);
+        }
+        break;
       case "confirm":
         switch (this.Pending) {
           case "back":
@@ -152,13 +252,35 @@ class QuickBackup extends BasePlugin {
               ]);
               if (this.backPending.waitCount >= 10) {
                 clearInterval(this.backPending.waitLoop);
-                this.RunBack(this.backPending.choice);
+                this.RunBack(this.backPending.choice).catch(() => {});
               }
             }, 1000);
             break;
           case "delete":
             if (!this.deletePending.choice || this.deletePending.choice == "") return;
-            this.deleteSave(this.deletePending.choice);
+            this.deleteSave(this.deletePending.choice).catch(() => {});
+            break;
+          case "backpd":
+            clearInterval(this.backpdPending.waitLoop);
+            clearTimeout(this.backpdPending.Timer);
+            if (!this.backpdPending.choice || this.backpdPending.choice == "") return;
+            this.backpdPending.waitCount = 0;
+            this.tellraw("@a", [
+              { text: "[备份系统]", color: "green", bold: true },
+              { text: `10`, color: "aqua", bold: true },
+              { text: `秒后重启服务器回档`, color: "red", bold: false }
+            ]);
+            this.backpdPending.waitLoop = setInterval(() => {
+              this.tellraw("@a", [
+                { text: "[备份系统]", color: "green", bold: true },
+                { text: `${10 - ++this.backpdPending.waitCount}`, color: "aqua", bold: true },
+                { text: `秒后重启服务器回档`, color: "red", bold: false }
+              ]);
+              if (this.backpdPending.waitCount >= 10) {
+                clearInterval(this.backpdPending.waitLoop);
+                this.RunBackPd(this.backpdPending.choice).catch(() => {});
+              }
+            }, 1000);
             break;
         }
         break;
@@ -171,7 +293,8 @@ class QuickBackup extends BasePlugin {
               { text: "备份删除系统", color: "yellow" }
             ])}`
           );
-          this.showPage(0, "delete");
+          this.Pending = "delete";
+          this.showPage(0, "wholeWorld", "delete");
         } else if (args.length == 2) {
           let List = this.getBackupList();
           List = List.filter(a => a.filename == args[1]);
@@ -183,8 +306,9 @@ class QuickBackup extends BasePlugin {
             ]);
             return;
           }
+          this.cancelAllPending();
           this.deletePending.choice = List[0];
-          this.Pending="delete";
+          this.Pending = "delete";
           this.tellraw("@a", [
             { text: "[备份系统]", color: "green", bold: true },
             { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
@@ -219,6 +343,7 @@ class QuickBackup extends BasePlugin {
       case "cancel":
         switch (this.Pending) {
           case "back":
+          case "backpd":
             this.tellraw("@a", [
               { text: "[备份系统]", color: "green", bold: true },
               { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
@@ -236,8 +361,8 @@ class QuickBackup extends BasePlugin {
         this.cancelAllPending();
         break;
       case "showpage":
-        if (args.length == 2) {
-          this.showPage(Number(args[1]));
+        if (args.length == 3) {
+          this.showPage(Number(args[2]), args[1]);
         }
         break;
     }
@@ -245,7 +370,15 @@ class QuickBackup extends BasePlugin {
   cancelAllPending() {
     clearInterval(this.backPending.waitLoop);
     clearTimeout(this.backPending.Timer);
+    clearInterval(this.backpdPending.waitLoop);
+    clearTimeout(this.backpdPending.Timer);
     this.backPending = {
+      Timer: 0,
+      choice: "",
+      waitLoop: 0,
+      waitCount: 0
+    };
+    this.backpdPending = {
       Timer: 0,
       choice: "",
       waitLoop: 0,
@@ -256,20 +389,32 @@ class QuickBackup extends BasePlugin {
     };
     this.Pending = "";
   }
-  getBackupList() {
-    let BackupList = klawSync(this.backupDest, {
-      nodir: true
-    }).map(a => {
-      a.filename = path.parse(a.path).base.split(".")[0];
-      return a;
-    });
-    return BackupList.sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+  getBackupList(list) {
+    if (list == "wholeWorld") {
+      let BackupList = klawSync(this.wholeWorldDest, {
+        nodir: true
+      }).map(a => {
+        a.filename = path.parse(a.path).base.split(".")[0];
+        return a;
+      });
+      return BackupList.sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+    } else if (list == "playerData") {
+      let BackupList = klawSync(this.PlayerDataDest, {
+        nofile: true
+      }).map(a => {
+        a.filename = a.path.split("/").pop();
+        return a;
+      });
+      // console.log(BackupList)
+      return BackupList.sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+    }
   }
-  async showPage(page = 0, command) {
+  async showPage(page = 0, list = "wholeWorld", command) {
     if (!command) {
       command = this.Pending;
     }
-    let List = this.getBackupList();
+    console.log(list, command);
+    let List = this.getBackupList(list);
     if (!List.length) {
       await this.CommandSender(
         `tellraw @a ${JSON.stringify([
@@ -302,13 +447,13 @@ class QuickBackup extends BasePlugin {
       {
         text: "上一页",
         color: page == 0 ? "gray" : "green",
-        clickEvent: page == 0 ? {} : { action: "run_command", value: `!!qb showpage ${page - 1}` }
+        clickEvent: page == 0 ? {} : { action: "run_command", value: `!!qb showpage ${list} ${page - 1}` }
       },
       { text: "|", color: "yellow" },
       {
         text: "下一页",
         color: page == All ? "gray" : "green",
-        clickEvent: page == All ? {} : { action: "run_command", value: `!!qb showpage ${page + 1}` }
+        clickEvent: page == All ? {} : { action: "run_command", value: `!!qb showpage ${list} ${page + 1}` }
       },
       { text: ">", color: "yellow" }
     );
@@ -317,12 +462,31 @@ class QuickBackup extends BasePlugin {
   async RunBack(backfile) {
     console.log(`[${moment().format("HH:mm:ss")}]回档 备注:${backfile.filename}`);
     this.schedule.cancel();
+    this.schedule2.cancel();
     await this.CommandSender("stop");
+    this.Core.EventBus.emit("disconnected");
     setTimeout(async () => {
       console.log("清空World文件夹");
       await fs.emptyDir(this.SaveSource);
       console.log("释放存档");
       await runCommand(`tar zxvf ${backfile.path} -C ${this.SaveSource}`);
+      console.log("启动服务器");
+      await runCommand(this.RunServer);
+      console.log("完成");
+      this.cancelAllPending();
+    }, 3000);
+  }
+  async RunBackPd(backfile) {
+    console.log(`[${moment().format("HH:mm:ss")}]回档-仅玩家数据 备注:${backfile.filename}`);
+    this.schedule.cancel();
+    this.schedule2.cancel();
+    await this.CommandSender("stop");
+    this.Core.EventBus.emit("disconnected");
+    setTimeout(async () => {
+      console.log("清空World/playerdata文件夹");
+      await fs.emptyDir(this.SaveSource + "/playerdata");
+      console.log("释放存档");
+      await fs.copy(`${backfile.path}`, this.SaveSource + "/playerdata");
       console.log("启动服务器");
       await runCommand(this.RunServer);
       console.log("完成");
@@ -336,12 +500,13 @@ class QuickBackup extends BasePlugin {
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
       { text: `删除中\n`, color: "red", bold: false }
     ]);
-    await fs.unlink(backfile.path)
+    await fs.unlink(backfile.path);
     this.tellraw("@a", [
       { text: "[备份系统]", color: "green", bold: true },
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
       { text: `删除完成\n`, color: "red", bold: false }
     ]);
+    this.cancelAllPending();
   }
   async RunBackup(comment) {
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
@@ -386,6 +551,7 @@ class QuickBackup extends BasePlugin {
     await fs.emptyDir("/tmp/Minecraft/world");
     await fs.copy(this.SaveSource, "/tmp/Minecraft/world");
     let a = await runCommand(`tar -cvzf ../${FileName} *`, { cwd: "/tmp/Minecraft/world" });
+    await fs.emptyDir("/tmp/Minecraft/world");
     let Stat = fs.statSync(Path);
     let Size = Stat.size / 1048576;
     await this.CommandSender(
@@ -403,7 +569,7 @@ class QuickBackup extends BasePlugin {
         { text: "正在上传存档到备份服务器", color: "yellow" }
       ])}`
     );
-    await fs.move(Path, `${this.backupDest}/${FileName}`);
+    await fs.move(Path, `${this.wholeWorldDest}/${FileName}`);
     await this.CommandSender(
       `tellraw @a ${JSON.stringify([
         { text: "[自动备份系统]", color: "green", bold: true },
@@ -420,32 +586,54 @@ class QuickBackup extends BasePlugin {
       ])}`
     );
   }
+  async RunBackupPlayerData(comment) {
+    comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
+    console.log(`[${moment().format("HH:mm:ss")}]运行玩家数据 备注:${comment}`);
+    let FileName = `${comment}`;
+    let ServerFile = klawSync(this.PlayerDataDest).sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+    for (let File of ServerFile.slice(30)) {
+      if (new Date().getTime() - File.stats.mtimeMs > 1800000) {
+        await fs.remove(File.path);
+      }
+    }
+    await fs.ensureDir(`${this.PlayerDataDest}/${FileName}`);
+    await fs.copy(this.SaveSource + "/playerdata", `${this.PlayerDataDest}/${FileName}`);
+    console.log("完成玩家数据备份");
+  }
   Start() {
     this.schedule = schedule.scheduleJob("0 0,30 * * * *", async () => {
       if (this.Core.Players.length) {
-        let ServerFile = klawSync(this.backupDest, {
+        let ServerFile = klawSync(this.wholeWorldDest, {
           nodir: true
-        });
-        for (let File of ServerFile) {
-          if (new Date().getTime() - File.stats.mtimeMs > 86400000 && /\\自动备份-/.test(File.path)) {
+        })
+          .filter(a => /自动备份-/.test(a.path))
+          .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+        for (let File of ServerFile.slice(24)) {
+          if (new Date().getTime() - File.stats.mtimeMs > 86400000) {
             await fs.unlink(File.path);
           }
         }
-        this.RunBackup(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`).then(() => {
-          return this.CommandSender(
-            `tellraw @a ${JSON.stringify([
-              { text: "[自动备份系统]", color: "green", bold: true },
-              { text: `如果你正在进行大型项目的建设，可通过命令:\n`, color: "gold", bold: true },
-              { text: "!!qb", color: "yellow" },
-              { text: " make ", color: "aqua" },
-              { text: "<备注信息>", color: "red" },
-              { text: "\n来进行存档的备份", color: "aqua" }
-            ])}`
-          );
-        });
+        this.RunBackup(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`)
+          .then(() => {
+            return this.CommandSender(
+              `tellraw @a ${JSON.stringify([
+                { text: "[自动备份系统]", color: "green", bold: true },
+                { text: `如果你正在进行大型项目的建设，可通过命令:\n`, color: "gold", bold: true },
+                { text: "!!qb", color: "yellow" },
+                { text: " make ", color: "aqua" },
+                { text: "<备注信息>", color: "red" },
+                { text: "\n来进行存档的备份", color: "aqua" }
+              ])}`
+            );
+          })
+          .catch(() => {});
       }
     });
-
+    this.schedule2 = schedule.scheduleJob("0 * * * * *", async () => {
+      if (this.Core.Players.length) {
+        this.RunBackupPlayerData(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`).catch(() => {});
+      }
+    });
     return this.CommandSender(
       `tellraw @a ${JSON.stringify([
         { text: "[自动备份系统]", color: "green", bold: true },
@@ -459,6 +647,7 @@ class QuickBackup extends BasePlugin {
   }
   Pause() {
     schedule.cancelJob(this.schedule);
+    schedule.cancelJob(this.schedule2);
   }
 }
 module.exports = QuickBackup;
