@@ -17,23 +17,23 @@ class PluginCore {
     this.options = options;
     this.PluginRegisters = [];
     this.NativeLogProcessers = [];
-    this.PluginInterfaces = {};
-    this.Crashed=false;
-    this.Error=false;
+    this.PluginInterfaces = new Map();
+    this.Crashed = false;
+    this.Error = false;
     this.connectRconClient(options);
     this.addPluginRegister(this.registerNativeLogProcesser, this);
     this.addPluginRegister(this.addPluginRegister, this);
     this.loadBuiltinPlugins();
-    this.crashDetect()
+    this.crashDetect();
     this.EventBus.on("disconnected", () => {
       this.Disconnected();
     });
     this.EventBus.on("connected", this.Connected.bind(this));
   }
-  crashDetect(){
-    fs.watch(this.BaseDir+"/crash-reports/",{},(e,f)=>{
-      this.Crashed=true;
-    })
+  crashDetect() {
+    fs.watch(this.BaseDir + "/crash-reports/", {}, (e, f) => {
+      this.Crashed = true;
+    });
   }
   loadBuiltinPlugins() {
     this.registerPlugin(require(__dirname + "/plugins/simpleCommand.js"));
@@ -42,11 +42,11 @@ class PluginCore {
   }
   registerPlugin(Constructor) {
     let PluginClass = Constructor;
-    if (this.PluginInterfaces[PluginClass.name]) {
+    if (this.PluginInterfaces.has(PluginClass.name)) {
       return console.log(`${PluginClass.PluginName} already loaded skipping`);
     }
     let PluginInterface = new PluginClass(this);
-    this.PluginInterfaces[PluginClass.name] = PluginInterface;
+    this.PluginInterfaces.set(PluginClass.name,PluginInterface);
     PluginInterface.init(this.genRegisterHelper(PluginInterface));
     console.log(`${PluginClass.PluginName} loaded finish`);
   }
@@ -74,23 +74,24 @@ class PluginCore {
         this.EventBus.emit("connected");
       })
       .catch(() => {
+        this.Error = false;
         this.ErrorHandle();
       });
   }
   Connected() {
-    setTimeout(()=>{
-    this.LogFileReader = new LogFileReader(this, this.LogFile);
-    },1000);
-    for (let Plugin of Object.values(this.PluginInterfaces)) {
+    setTimeout(() => {
+      this.LogFileReader = new LogFileReader(this, this.LogFile);
+    }, 1000);
+    for (let Plugin of this.PluginInterfaces.values()) {
       if (Plugin.Start) {
         Plugin.Start.call(Plugin);
       }
     }
     console.log("Rcon Connected");
-    this.Error=false;
+    this.Error = false;
   }
   Disconnected() {
-    for (let Plugin of Object.values(this.PluginInterfaces)) {
+    for (let Plugin of this.PluginInterfaces.values()) {
       if (Plugin.Pause) {
         Plugin.Pause.call(Plugin);
       }
@@ -101,18 +102,17 @@ class PluginCore {
   }
   async ErrorHandle(a) {
     console.error(a);
-    if (((this.RconClient.socket && this.RconClient.socket.destoryed) || !this.RconClient.socket)&&!this.Error) {
-      this.Error=true;
+    if (((this.RconClient.socket && this.RconClient.socket.destoryed) || !this.RconClient.socket) && !this.Error) {
+      this.Error = true;
       this.EventBus.emit("disconnected");
       console.log("发生错误10s后重新链接");
-      if(this.Crashed){
-        this.Crashed=false;
-        await runCommand(`${this.Core.BaseDir}/runserver`)
+      if (this.Crashed) {
+        this.Crashed = false;
+        await runCommand(`${this.BaseDir}/runserver`);
       }
       setTimeout(() => {
-        this.connectRconClient(this.options).catch(() => {
-          this.ErrorHandle();
-        });
+        console.log("正在重连");
+        this.connectRconClient(this.options);
       }, 10000);
     }
   }

@@ -33,7 +33,7 @@ class BasePlugin {
     }
   }
   async getAllScore() {
-    let Score = this.Core.PluginInterfaces.Scoreboard.Scores;
+    let Score = this.Core.PluginInterfaces.get("Scoreboard").Scores;
     let NewScore = {};
     for (let [Player, ScoreList] of Object.entries(Score)) {
       NewScore[Player] = {};
