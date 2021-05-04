@@ -9,7 +9,8 @@ class ItemCleaner extends BasePlugin {
     this.CleanPending = {
       Pending: false,
       Timer: 0,
-      StartTime: 0
+      StartTime: 0,
+      State: 0
     };
     //this.schedule={}
   }
@@ -47,6 +48,7 @@ class ItemCleaner extends BasePlugin {
         { text: "[点此取消]", color: "gold", clickEvent: { action: "run_command", value: `!!itemclean cancel` } }
       ]);
       this.CleanPending.StartTime = new Date().getTime();
+      this.CleanPending.State = 0;
       this.CleanPending.Timer = setInterval(() => {
         this.CleanTimer();
       }, 500);
@@ -54,20 +56,22 @@ class ItemCleaner extends BasePlugin {
   }
   CleanTimer() {
     let d = new Date().getTime() - this.CleanPending.StartTime;
-    let Sec = Math.floor(d/1000);
-    if (Sec == 30) {
+    let Sec = Math.floor(d / 1000);
+    if (Sec == 30 && this.CleanPending.State === 0) {
       this.tellraw("@a", [
         { text: "[扫地大妈]", color: "green" },
         { text: "30秒后清理垃圾 ", color: "aqua" },
         { text: "[点此取消]", color: "gold", clickEvent: { action: "run_command", value: `!!itemclean cancel` } }
       ]);
+      this.CleanPending.State++;
     }
-    if (Sec == 50) {
+    if (Sec == 50 && this.CleanPending.State === 1) {
       this.tellraw("@a", [
         { text: "[扫地大妈]", color: "green" },
         { text: "10秒后清理垃圾 ", color: "aqua" },
         { text: "[点此取消]", color: "gold", clickEvent: { action: "run_command", value: `!!itemclean cancel` } }
       ]);
+      this.CleanPending.State = 0;
     }
     if (Sec == 60) {
       clearInterval(this.CleanPending.Timer);
