@@ -84,22 +84,22 @@ class PluginCore {
       this.LogFileReader = new LogFileReader(this, this.LogFile);
     }, 1000);
     for (let Plugin of this.PluginInterfaces.values()) {
-      if (PluginInterface._state == "Started") continue;
+      if (Plugin._state == "Started") continue;
       if (Plugin.Start) {
         Plugin.Start.call(Plugin);
       }
-      PluginInterface._state = "Started";
+      Plugin._state = "Started";
     }
     console.log("Rcon Connected");
     this.Error = false;
   }
   Disconnected() {
     for (let Plugin of this.PluginInterfaces.values()) {
-      if (PluginInterface._state == "Paused") continue;
+      if (Plugin._state == "Paused") continue;
       if (Plugin.Pause) {
         Plugin.Pause.call(Plugin);
       }
-      PluginInterface._state = "Paused";
+      Plugin._state = "Paused";
     }
     if (this.LogFileReader.close) {
       this.LogFileReader.close();
