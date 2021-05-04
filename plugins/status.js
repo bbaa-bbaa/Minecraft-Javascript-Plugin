@@ -5,9 +5,30 @@ const moment = require("moment");
 let WorldMapping = {
   overworld: "主世界",
   Overall: "所有",
+  vox_ponds: "未知",
   the_nether: "地狱",
+  candyland: "糖果",
+  deeplands: "深层",
+  mysterium: "秘境",
+  immortallis: "不朽",
+  barathos: "爵士",
+  lborean: "暴风",
+  ancient_cavern: "远古神殿",
   the_end: "末地",
-  twilight_forest: "暮色森林"
+  runandor: "符境",
+  crystevia: "晶体",
+  gardencia: "花园",
+  celeve: "玩具",
+  lelyetia: "赫尔维蒂",
+  precasia: "传说",
+  iromine: "黄金",
+  greckon: "格瑞克",
+  creeponia: "蠕变",
+  dustopia: "异位",
+  shyrelands: "塞尔瑞",
+  lunalus: "月球",
+  haven: "天堂",
+  abyss: "深渊"
 };
 class Status extends BasePlugin {
   static PluginName = "监控";
@@ -22,7 +43,12 @@ class Status extends BasePlugin {
     Plugin.registerCommand("status", () => {
       this.status(true);
     });
-
+    Plugin.registerNativeLogProcesser(/\[net.minecraft.server.dedicated.DedicatedServer\].*?\<.*?\>\s([+-\d]+)\s*$/,(log) => {
+      try {
+        let Num=Number(log.match(/\[net.minecraft.server.dedicated.DedicatedServer\].*?\<.*?\>\s([+-\d]+)\s*$/)[1]);
+        this.CommandSender(`me ${Num+1}`)
+      }catch(e){}
+    })
     setInterval(() => {
       si.networkStats("enp2s0").then(data => {
         this.Info.network.rx = data[0].rx_sec;
@@ -86,20 +112,15 @@ class Status extends BasePlugin {
               this.LastMspt = MSPT;
               return;
             }
-            if (Math.abs(MSPTDiff) < (TPS > 18 ? 8 : 5)) {
-              return;
-            }
             this.LastMspt = MSPT;
-            if (MSPTDiff > 0) {
-              this.MSPTDiffCount += MSPT > 40 ? 2 : 1;
-            } else {
-              this.MSPTDiffCount -= MSPT < 10 ? 2 : 1;
-            }
             if (MSPTDiff != 0) {
-              console.log(`负载异动:${this.MSPTDiffCount}`);
+              this.MSPTDiffCount += Math.round(MSPTDiff/5)
             }
-            if (Math.abs(this.MSPTDiffCount) < 4) return;
-            if (this.MSPTDiffCount >= (TPS > 18 ? 4 : 2)) {
+            if (Math.abs(MSPTDiff)>5) {
+              console.log(`负载异动:${this.MSPTDiffCount} MSPT:${MSPT}` );
+            }
+           // if (Math.abs(this.MSPTDiffCount) < 4) return;
+            if (this.MSPTDiffCount >= (6)) {
               this.CommandSender(
                 `tellraw @a ${JSON.stringify([
                   { text: "[监控系统]", color: "yellow", bold: true },
@@ -112,8 +133,7 @@ class Status extends BasePlugin {
                 ])}`
               ).catch(() => {});
               this.MSPTDiffCount = 0;
-            }
-            if (this.MSPTDiffCount <= -(TPS < 18 ? 4 : 2)) {
+            } else if (this.MSPTDiffCount <= -6) {
               this.CommandSender(
                 `tellraw @a ${JSON.stringify([
                   { text: "[监控系统]", color: "green", bold: true },
@@ -126,6 +146,8 @@ class Status extends BasePlugin {
                 ])}`
               ).catch(() => {});
               this.MSPTDiffCount = 0;
+            } else {
+              return;
             }
           } else if (!force) continue;
           if (MSPT < 0.5) continue;
