@@ -7,7 +7,7 @@ class simpleCommand extends BasePlugin {
   }
   init(Plugin) {
     Plugin.addPluginRegister(this.registerCommand);
-    Plugin.registerNativeLogProcesser(/\[net.minecraft.server.dedicated.DedicatedServer\].*?\<(.*?)\>.*?!!(.*)/,this.ProcessCommand)
+    Plugin.registerNativeLogProcesser(/\[Server thread\/INFO\].*?\<(.*?)\>.*?!!(.*)/,this.ProcessCommand)
   }
   registerCommand(cmd,func,scope){
     if(this.CommandList[cmd]) return;
@@ -15,7 +15,7 @@ class simpleCommand extends BasePlugin {
     console.log(`[${this.constructor.PluginName}]${scope.constructor.PluginName}注册了一个命令${cmd}`)
   }
   ProcessCommand(RawText){
-    let [Other, Player, Commmand] = /\[net.minecraft.server.dedicated.DedicatedServer\]:.*?\<(.*?)\>.*?!!(.*)/.exec(
+    let [Other, Player, Commmand] = /\[Server thread\/INFO\]:.*?\<(.*?)\>.*?!!(.*)/.exec(
       RawText
     );
     let tmp = Commmand.split(" ");
