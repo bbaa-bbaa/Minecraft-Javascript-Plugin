@@ -5,14 +5,10 @@ class DeathCount extends BasePlugin {
     super(...arguments);
   }
   init(Plugin) {
-    Plugin.registerNativeLogProcesser(/\w+ is bleeding.../, this.addCount);
-  }
-  addCount(Line){
-    let [_Unuse,Player]=Line.match(/(\w+) is bleeding.../);
-    this.Scoreboard.playerAction(Player,"add","Death",1)
+  //  Plugin.registerNativeLogProcesser(/\w+ is bleeding.../, this.addCount);
   }
   async Start() {
-    await this.Scoreboard.ensureScoreboard({ name: "Death", type: "dummy", displayname: "倒地榜" });
+    await this.Scoreboard.ensureScoreboard({ name: "Death", type: "deathCount", displayname: "倒地榜" });
     await this.Scoreboard.displayScoreboard("Death", "sidebar");
   }
 }

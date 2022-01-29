@@ -1,15 +1,15 @@
 let BasePlugin = require(__dirname + "/../basePlugin.js");
 
 class PlayerLists extends BasePlugin {
-  static PluginName = "记分版";
+  static PluginName = "玩家数量";
   constructor() {
     super(...arguments);
     this.Players = [];
     this.LoopId = 0;
   }
   init(Plugin) {
-    Plugin.registerNativeLogProcesser(/\w+ joined the game/, this.updatePlayerLists);
-    Plugin.registerNativeLogProcesser(/\w+ left the game/, this.updatePlayerLists);
+    Plugin.registerNativeLogProcesser(/\w+ joined the game/, () => {this.updatePlayerLists() });
+    Plugin.registerNativeLogProcesser(/\w+ left the game/, () => { this.updatePlayerLists() });
     Object.defineProperty(this.Core, "Players", {
       get: () => {
         return this.Players;
@@ -18,7 +18,7 @@ class PlayerLists extends BasePlugin {
   }
   async Start() {
     this.LoopId = setInterval(() => {
-      this.updatePlayerLists();
+      this.updatePlayerLists(false);
     }, 10000);
     return this.updatePlayerLists(true);
   }
@@ -38,12 +38,13 @@ class PlayerLists extends BasePlugin {
       }
       this.Players = [];
       return this.Players;
+
     }
     let Players = list[1]
       .split(",")
       .map(a => a.trim())
       .filter(a => a);
-    if (this.Players.length != Players.length&&!first) {
+    if (this.Players.length != Players.length && !first) {
       this.Core.EventBus.emit("playerlistchange", Players);
     }
     this.Players = Players;

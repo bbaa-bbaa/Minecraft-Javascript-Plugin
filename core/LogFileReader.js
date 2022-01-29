@@ -1,32 +1,64 @@
-const fs = require("fs-extra");
+const fs = require("fs");
+const _ = require("lodash")
 class LogFileReader {
-  constructor(Core,path) {
+  constructor(Core, path) {
     this.Handle = null;
     this.Pos = 0;
     this.Core = Core;
-    this.path=path;
+    this.path = path;
+
     this.openLogFile()
+    this.watchLogfile()
   }
-  readPartFile(curr, prev) {
-    if(curr.size - this.Pos<=0) return
-    this.Handle.read(Buffer.alloc(curr.size - this.Pos), 0, curr.size - this.Pos, this.Pos).then(({bytesRead,buffer}) => {
+  async readPartFile() {
+    const curr={ size: (await fs.promises.stat(this.path)).size }
+    if (curr.size - this.Pos <= 0) return
+    this.Handle.read(Buffer.alloc(curr.size - this.Pos), 0, curr.size - this.Pos, this.Pos).then(({ bytesRead, buffer }) => {
       this.Pos = curr.size
       let Str = buffer.toString("utf8").split("\n");
       for (let Line of Str) {
-        if(Line.length == 0) continue
+        if (Line.length == 0) continue
         this.Core.ProcessLog(Line);
       }
     });
   }
-  async openLogFile() {
+  async watchLogfile() {
+    console.log("在[" + this.path + "]注册文件监听器")
+    this.ac = new AbortController();
+    const readFilef=_.debounce(this.readPartFile.bind(this),100);
+    try {
+      const watcher = fs.promises.watch(this.path, { signal: this.ac.signal });
+      for await (const event of watcher) {
+        switch (event.eventType) {
+          case "change":
+            readFilef();
+            break;
+          case "rename":
+            this.closeLogFile();
+            setTimeout(() => {
+              this.openLogFile("FileWatcher");
+            }, 1000)
+            break;
+        }
+      }
+    } catch (e) { }
+  }
+  async openLogFile(r = "WatcherInit") {
     this.Handle = await fs.promises.open(this.path, "r");
     this.Pos = (await fs.promises.stat(this.path)).size;
-    console.log("打开日志 位移"+this.Pos)
-    fs.watchFile(this.path, { interval: 100 }, (...args)=>{this.readPartFile(...args)});
+    console.log(`[${r}]打开日志 位移` + this.Pos)
+
+    // fs.watchFile(this.path, { interval: 100 }, (...args)=>{this.readPartFile(...args)});
   }
-  async close(){
-    fs.unwatchFile(this.path)
+  async closeLogFile() {
+    //fs.unwatchFile(this.path)
     this.Handle.close();
+    console.log("关闭日志文件")
+  }
+  close() {
+    console.log("关闭日志Watcher")
+    this.ac.abort();
+    this.closeLogFile();
   }
 }
 module.exports = LogFileReader;

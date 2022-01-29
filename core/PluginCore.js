@@ -79,6 +79,14 @@ class PluginCore {
         this.ErrorHandle();
       });
   }
+  reconnectRcon(name){
+    this.EventBus.emit("disconnected");
+    console.log(`[${name}]请求重连`);
+    setTimeout(() => {
+      console.log("正在重连");
+      this.connectRconClient(this.options);
+    }, 10000);
+  }
   Connected() {
     setTimeout(() => {
       this.LogFileReader = new LogFileReader(this, this.LogFile);

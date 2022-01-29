@@ -12,7 +12,7 @@ class QuickBackup extends BasePlugin {
   constructor() {
     super(...arguments);
     this.schedule = null;
-    this.backupDest = "/media/XiaoMi/mcSave";
+    this.backupDest = "/home/zyg/plgybackup";
     this.wholeWorldDest = this.backupDest + "/World";
     this.PlayerDataDest = this.backupDest + "/Playerdata";
     this.SaveSource = `${this.Core.BaseDir}/world`;
@@ -296,7 +296,7 @@ class QuickBackup extends BasePlugin {
           this.Pending = "delete";
           this.showPage(0, "wholeWorld", "delete");
         } else if (args.length == 2) {
-          let List = this.getBackupList();
+          let List = this.getBackupList("wholeWorld");
           List = List.filter(a => a.filename == args[1]);
           if (List.length == 0) {
             this.tellraw("@a", [
@@ -462,7 +462,7 @@ class QuickBackup extends BasePlugin {
   async RunBack(backfile) {
     console.log(`[${moment().format("HH:mm:ss")}]回档 备注:${backfile.filename}`);
     this.schedule.cancel();
-    this.schedule2.cancel();
+   // this.schedule2.cancel();
     await this.CommandSender("stop");
     this.Core.EventBus.emit("disconnected");
     setTimeout(async () => {
@@ -474,12 +474,13 @@ class QuickBackup extends BasePlugin {
       await runCommand(this.RunServer);
       console.log("完成");
       this.cancelAllPending();
+      this.Core.reconnectRcon("QuickBackup");
     }, 3000);
   }
   async RunBackPd(backfile) {
     console.log(`[${moment().format("HH:mm:ss")}]回档-仅玩家数据 备注:${backfile.filename}`);
     this.schedule.cancel();
-    this.schedule2.cancel();
+    //this.schedule2.cancel();
     await this.CommandSender("stop");
     this.Core.EventBus.emit("disconnected");
     setTimeout(async () => {
@@ -491,6 +492,7 @@ class QuickBackup extends BasePlugin {
       await runCommand(this.RunServer);
       console.log("完成");
       this.cancelAllPending();
+      this.Core.reconnectRcon("QuickBackup");
     }, 3000);
   }
   async deleteSave(backfile) {
@@ -629,11 +631,11 @@ class QuickBackup extends BasePlugin {
           .catch(() => {});
       }
     });
-    this.schedule2 = schedule.scheduleJob("0 * * * * *", async () => {
+   /* this.schedule2 = schedule.scheduleJob("0 * * * * *", async () => {
       if (this.Core.Players.length) {
         this.RunBackupPlayerData(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`).catch(() => {});
       }
-    });
+    });*/
     return this.CommandSender(
       `tellraw @a ${JSON.stringify([
         { text: "[自动备份系统]", color: "green", bold: true },
@@ -647,7 +649,7 @@ class QuickBackup extends BasePlugin {
   }
   Pause() {
     schedule.cancelJob(this.schedule);
-    schedule.cancelJob(this.schedule2);
+  //  schedule.cancelJob(this.schedule2);
   }
 }
 module.exports = QuickBackup;
