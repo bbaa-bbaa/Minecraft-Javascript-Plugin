@@ -44,10 +44,14 @@ class LogFileReader {
     } catch (e) { }
   }
   async openLogFile(r = "WatcherInit") {
+   try{
     this.Handle = await fs.promises.open(this.path, "r");
     this.Pos = (await fs.promises.stat(this.path)).size;
     console.log(`[${r}]打开日志 位移` + this.Pos)
-
+   } catch(e){
+   console.error(e)
+    this.openLogFile(r);
+  }
     // fs.watchFile(this.path, { interval: 100 }, (...args)=>{this.readPartFile(...args)});
   }
   async closeLogFile() {
