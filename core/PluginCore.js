@@ -31,9 +31,11 @@ class PluginCore {
     this.EventBus.on("connected", this.Connected.bind(this));
   }
   crashDetect() {
-    fs.watch(this.BaseDir + "/crash-reports/", {}, (e, f) => {
-      this.Crashed = true;
-    });
+    fs.ensureDir(this.BaseDir + "/crash-reports/").then(() => {
+      fs.watch(this.BaseDir + "/crash-reports/", {}, (e, f) => {
+        this.Crashed = true;
+      });
+    })
   }
   loadBuiltinPlugins() {
     this.registerPlugin(require(__dirname + "/plugins/simpleCommand.js"));
@@ -79,7 +81,7 @@ class PluginCore {
         this.ErrorHandle();
       });
   }
-  reconnectRcon(name){
+  reconnectRcon(name) {
     this.EventBus.emit("disconnected");
     console.log(`[${name}]请求重连`);
     setTimeout(() => {

@@ -20,7 +20,7 @@ class LogFileReader {
         if (Line.length == 0) continue
         this.Core.ProcessLog(Line);
       }
-    });
+    }).catch(()=>{});
   }
   async watchLogfile() {
     console.log("在[" + this.path + "]注册文件监听器")
