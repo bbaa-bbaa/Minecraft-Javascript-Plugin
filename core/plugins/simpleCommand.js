@@ -21,6 +21,7 @@ class simpleCommand extends BasePlugin {
     let tmp = Commmand.split(" ");
     let Cmd = tmp.shift();
     let Args = tmp;
+    Player = Player.replace(/§\w/g,"")
     if(this.CommandList[Cmd]){
       console.log(`玩家 ${Player} 执行 ${Cmd} ${Args.join(" ")}`)
       this.CommandList[Cmd](Player,...Args)
