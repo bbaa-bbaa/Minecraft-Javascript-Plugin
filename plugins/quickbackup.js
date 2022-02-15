@@ -7,12 +7,13 @@ const schedule = require("node-schedule");
 const runCommand = util.promisify(cp.exec);
 const klawSync = require("klaw-sync");
 const path = require("path");
+const { json } = require("stream/consumers");
 class QuickBackup extends BasePlugin {
   static PluginName = "快速备份";
   constructor() {
     super(...arguments);
     this.schedule = null;
-    this.backupDest = "/home/zyg/mc118Backup";
+    this.backupDest = "/home/bbaa/mc118Backup";
     this.wholeWorldDest = this.backupDest + "/World";
     this.PlayerDataDest = this.backupDest + "/Playerdata";
     this.SaveSource = `${this.Core.BaseDir}/world`;
@@ -30,7 +31,11 @@ class QuickBackup extends BasePlugin {
       Timer: 0,
       choice: "",
       waitLoop: 0,
-      waitCount: 0
+      waitCount: 0,
+      requester: {
+        name: "",
+        uuid: ""
+      }
     };
     this.deletePending = {
       choice: ""
@@ -181,7 +186,7 @@ class QuickBackup extends BasePlugin {
             ])}`
           );
           this.Pending = "backpd";
-          this.showPage(0, "playerData", "backbd");
+          this.showPage(0, "playerData", "backpd");
         } else if (args.length == 2) {
           let List = this.getBackupList("playerData");
           List = List.filter(a => a.filename == args[1]);
@@ -196,10 +201,22 @@ class QuickBackup extends BasePlugin {
           this.cancelAllPending();
           this.Pending = "backpd";
           this.backpdPending.choice = List[0];
+          this.backpdPending.requester.name = Player;
+          this.backpdPending.requester.uuid = this.ConvertUUID(await this.CommandSender(this.newVersion ? `data get entity @e[limit=1,name="${Player}"] UUID`:"fuwef").then(a => {
+            return a.split(";")[1].replace(/\]/g, "").split(",").map(b => Number(b.trim()))
+          }).catch(b => [0, 0, 0, 0]));
+          if(this.backpdPending.requester.uuid=="00000000-0000-0000-0000-000000000000") {
+            this.tellraw("@a", [
+              { text: "[备份系统]", color: "green", bold: true },
+              { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+              { text: `找不到你选择的玩家`, color: "red", bold: true }
+            ]);
+            this.cancelAllPending();
+          }
           this.tellraw("@a", [
             { text: "[备份系统]", color: "green", bold: true },
             { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
-            { text: `你已经选择要恢复的备份\n`, color: "yellow", bold: false },
+            { text: `你正在请求恢复${Player}的玩家数据\n`, color: "yellow", bold: false },
             { text: `名称:`, color: "yellow", bold: false },
             { text: this.backpdPending.choice.filename, color: "aqua", bold: true },
             { text: `\n时间:`, color: "yellow", bold: false },
@@ -255,33 +272,33 @@ class QuickBackup extends BasePlugin {
               ]);
               if (this.backPending.waitCount >= 10) {
                 clearInterval(this.backPending.waitLoop);
-                this.RunBack(this.backPending.choice).catch(() => {});
+                this.RunBack(this.backPending.choice).catch(() => { });
               }
             }, 1000);
             break;
           case "delete":
             if (!this.deletePending.choice || this.deletePending.choice == "") return;
-            this.deleteSave(this.deletePending.choice).catch(() => {});
+            this.deleteSave(this.deletePending.choice).catch(() => { });
             break;
           case "backpd":
             clearInterval(this.backpdPending.waitLoop);
             clearTimeout(this.backpdPending.Timer);
             if (!this.backpdPending.choice || this.backpdPending.choice == "") return;
             this.backpdPending.waitCount = 0;
-            this.tellraw("@a", [
+            this.tellraw(this.backpdPending.requester.name, [
               { text: "[备份系统]", color: "green", bold: true },
-              { text: `10`, color: "aqua", bold: true },
-              { text: `秒后重启服务器回档`, color: "red", bold: false }
+              { text: `5`, color: "aqua", bold: true },
+              { text: `秒后回档`, color: "red", bold: false }
             ]);
             this.backpdPending.waitLoop = setInterval(() => {
-              this.tellraw("@a", [
+              this.tellraw(this.backpdPending.requester.name, [
                 { text: "[备份系统]", color: "green", bold: true },
-                { text: `${10 - ++this.backpdPending.waitCount}`, color: "aqua", bold: true },
-                { text: `秒后重启服务器回档`, color: "red", bold: false }
+                { text: `${5 - ++this.backpdPending.waitCount}`, color: "aqua", bold: true },
+                { text: `秒后回档`, color: "red", bold: false }
               ]);
-              if (this.backpdPending.waitCount >= 10) {
+              if (this.backpdPending.waitCount >= 5) {
                 clearInterval(this.backpdPending.waitLoop);
-                this.RunBackPd(this.backpdPending.choice).catch(() => {});
+                this.RunBackPd(this.backpdPending.choice).catch(() => { });
               }
             }, 1000);
             break;
@@ -385,7 +402,11 @@ class QuickBackup extends BasePlugin {
       Timer: 0,
       choice: "",
       waitLoop: 0,
-      waitCount: 0
+      waitCount: 0,
+      requester: {
+        name: "",
+        uuid: ""
+      }
     };
     this.deletePending = {
       choice: ""
@@ -482,20 +503,22 @@ class QuickBackup extends BasePlugin {
   }
   async RunBackPd(backfile) {
     console.log(`[${moment().format("HH:mm:ss")}]回档-仅玩家数据 备注:${backfile.filename}`);
-    this.schedule.cancel();
-    this.schedule2.cancel();
-    await this.CommandSender("stop");
-    this.Core.EventBus.emit("disconnected");
+    console.log(`请求者信息:${JSON.stringify(this.backpdPending.requester)}`)
+    //this.schedule.cancel();
+   // this.schedule2.cancel();
+    await this.CommandSender("kick "+this.backpdPending.requester.name+" 请求回档");
+    await this.CommandSender("ban "+this.backpdPending.requester.name+" 请求回档");
+   // this.Core.EventBus.emit("disconnected");
     setTimeout(async () => {
-      console.log("清空World/playerdata文件夹");
-      await fs.emptyDir(this.SaveSource + "/playerdata");
       console.log("释放存档");
-      await fs.copy(`${backfile.path}`, this.SaveSource + "/playerdata");
-      console.log("启动服务器");
-      await runCommand(this.RunServer);
+      //console.log(`${backfile.path}`)
+      //console.log(`${backfile.path}`, this.SaveSource + "/playerdata")
+      await fs.copy(`${backfile.path}/${this.backpdPending.requester.uuid}.dat`, `${this.SaveSource}/playerdata/${this.backpdPending.requester.uuid}.dat`);
+      await fs.copy(`${backfile.path}/${this.backpdPending.requester.uuid}.dat_old`, `${this.SaveSource}/playerdata/${this.backpdPending.requester.uuid}.dat_old`);
       console.log("完成");
+      await this.CommandSender("pardon "+this.backpdPending.requester.name);
       this.cancelAllPending();
-      this.Core.reconnectRcon("QuickBackup");
+     // this.Core.reconnectRcon("QuickBackup");
     }, 3000);
   }
   async deleteSave(backfile) {
@@ -631,12 +654,12 @@ class QuickBackup extends BasePlugin {
               ])}`
             );
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     });
     this.schedule2 = schedule.scheduleJob("0 * * * * *", async () => {
       if (this.Core.Players.length) {
-        this.RunBackupPlayerData(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`).catch(() => {});
+        this.RunBackupPlayerData(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`).catch(() => { });
       }
     });
     return this.CommandSender(
