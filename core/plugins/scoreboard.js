@@ -10,7 +10,6 @@ class Scoreboard extends BasePlugin {
     });
     this.BoardList = {}; // name,type,displayname,pluginhash
     this.Scores = {};
-    this.newVersion = this.Core.options.newVersion || false;
   }
   init(Plugin) {
     let requestUpdateScore = _.debounce(() => { this.updateScore().then(() => { this.Synced(); }) }, 5000);

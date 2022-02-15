@@ -1,10 +1,19 @@
 const crypto = require("crypto");
-
+const uuid = require("uuid").stringify
 class BasePlugin {
   constructor(Core) {
     this.Core = Core;
     const hash = crypto.createHash("sha1");
     this.Scoreboard_Prefix = hash.update(this.constructor.name).digest("hex");
+  }
+  ConvertUUID(_IntArray){
+    const arr = new ArrayBuffer(16);
+    const view = new DataView(arr);
+    //let  _IntArray = [-1632430930, -1307881510, -1319685969, 644903231]
+    for (let [i, item] of _IntArray.entries()) {
+      view.setInt32(i * 4, item, false);
+    }
+    return uuid(new Uint8Array(arr))
   }
   CommandSender() {
     return this.Core.RconClient.send(...arguments).catch(this.Core.ErrorHandle.bind(this.Core));
@@ -72,6 +81,9 @@ class BasePlugin {
       };
     }
     return Mapping;
+  }
+  get newVersion(){
+    return this.Core.options.newVersion||false;
   }
 }
 module.exports = BasePlugin;

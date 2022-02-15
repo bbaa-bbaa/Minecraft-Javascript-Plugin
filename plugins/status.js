@@ -50,8 +50,8 @@ class Status extends BasePlugin {
         this.CommandSender(`me ${Num + 1}`)
       } catch (e) { }
     })
-    setInterval(() => {
-      si.networkStats("ens5").then(data => {
+    setInterval(async () => {
+      si.networkStats(await si.networkInterfaceDefault()).then(data => {
         this.Info.network.rx = data[0].rx_sec;
         this.Info.network.tx = data[0].tx_sec;
       });
@@ -81,7 +81,7 @@ class Status extends BasePlugin {
         la = la.toFixed(2)
         return [
           { text: `Loadavg#${["1min", "5min", "15min"][idx]}:`, color: "aqua" },
-          { text: `${la} `, color: Number(la) < 0.4 ? "green" : Number(la) < 0.6 ? "yellow" : "red" }
+          { text: `${la} `, color: Number(la/this.Info.cpu.length) < 0.4 ? "green" : Number(la/this.Info.cpu.length) < 0.6 ? "yellow" : "red" }
         ];
       })
     ])}`
