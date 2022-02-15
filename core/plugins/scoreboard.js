@@ -97,7 +97,7 @@ class Scoreboard extends BasePlugin {
       console.log(ScoreList)
       console.log("获取被跟踪的实体列表")
       return this.CommandSender("scoreboard players list").then(async a=>{
-        if(!/There are \d tracked entities:\s?(.*)/.test(a)) return new Promise.resolve();
+        if(!/There are \d tracked entities:\s?(.*)/.test(a)) return Promise.resolve();
         let players=a.match(/There are \d tracked entities:\s?(.*)/)[1].split(",").map(b=>b.trim())
         for (let i of players) {
           this.Scores[i] = {}

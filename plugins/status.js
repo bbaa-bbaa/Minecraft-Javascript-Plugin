@@ -78,14 +78,14 @@ class Status extends BasePlugin {
       { text: "[监控系统]", color: "green", bold: true },
       { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
       ...os.loadavg().map((la, idx) => {
-        la=la.toFixed(2)
+        la = la.toFixed(2)
         return [
-          { text: `Loadavg#${["1min","5min","15min"][idx]}:`, color: "aqua" },
+          { text: `Loadavg#${["1min", "5min", "15min"][idx]}:`, color: "aqua" },
           { text: `${la} `, color: Number(la) < 0.4 ? "green" : Number(la) < 0.6 ? "yellow" : "red" }
         ];
       })
     ])}`
-  );
+    );
     this.CommandSender(
       `tellraw @a ${JSON.stringify([
         { text: "[监控系统]", color: "green", bold: true },
@@ -93,6 +93,17 @@ class Status extends BasePlugin {
         { text: `物理内存使用:`, color: "aqua" },
         {
           text: `${(Mem.active / 1024 / 1024).toFixed(2)}M/${(Mem.total / 1024 / 1024).toFixed(2)}M`,
+          color: "green"
+        }
+      ])}`
+    );
+    this.CommandSender(
+      `tellraw @a ${JSON.stringify([
+        { text: "[监控系统]", color: "green", bold: true },
+        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `虚拟内存使用:`, color: "aqua" },
+        {
+          text: `${(Mem.swapused / 1024 / 1024).toFixed(2)}M/${(Mem.swaptotal / 1024 / 1024).toFixed(2)}M`,
           color: "green"
         }
       ])}`
@@ -111,7 +122,7 @@ class Status extends BasePlugin {
   Start() {
   }
   Pause() {
- //   clearInterval(this.LoopId);
+    //   clearInterval(this.LoopId);
   }
 }
 module.exports = Status;
