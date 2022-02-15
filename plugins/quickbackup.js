@@ -74,20 +74,18 @@ class QuickBackup extends BasePlugin {
         if (comment) {
           await this.RunBackup(comment);
         } else {
-          await this.CommandSender(
-            `tellraw @a ${JSON.stringify([
+          await this.tellraw(`@a`,[
               { text: "[自动备份系统]", color: "green", bold: true },
               { text: `命令格式:`, color: "yellow", bold: true },
               { text: "!!qb", color: "yellow" },
               { text: " make ", color: "aqua" },
               { text: "<备注信息>", color: "red" }
-            ])}`
+            ]
           );
         }
       case "help":
       default:
-        await this.CommandSender(
-          `tellraw @a ${JSON.stringify([
+        await this.tellraw(`@a`,[
             { text: "[自动备份系统]", color: "green", bold: true },
             { text: `======命令列表======\n`, color: "yellow", bold: true },
             { text: "!!qb", color: "yellow" },
@@ -109,17 +107,16 @@ class QuickBackup extends BasePlugin {
             { text: " backpd ", color: "aqua" },
             { text: "[备注信息] ", color: "green" },
             { text: "- BackPlayerData 恢复玩家数据", color: "aqua" }
-          ])}`
+          ]
         );
         break;
       case "back":
         if (args.length == 1) {
-          await this.CommandSender(
-            `tellraw @a ${JSON.stringify([
+          await this.tellraw(`@a`,[
               { text: "[备份系统]", color: "green", bold: true },
               { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
               { text: "自助回档服务", color: "yellow" }
-            ])}`
+            ]
           );
           this.Pending = "back";
           this.showPage(0, "wholeWorld", "back");
@@ -178,12 +175,11 @@ class QuickBackup extends BasePlugin {
         break;
       case "backpd":
         if (args.length == 1) {
-          await this.CommandSender(
-            `tellraw @a ${JSON.stringify([
+          await this.tellraw(`@a`,[
               { text: "[备份系统]", color: "green", bold: true },
               { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
               { text: "自助回档服务", color: "yellow" }
-            ])}`
+            ]
           );
           this.Pending = "backpd";
           this.showPage(0, "playerData", "backpd");
@@ -306,12 +302,11 @@ class QuickBackup extends BasePlugin {
         break;
       case "delete":
         if (args.length == 1) {
-          await this.CommandSender(
-            `tellraw @a ${JSON.stringify([
+          await this.tellraw(`@a`,[
               { text: "[备份系统]", color: "green", bold: true },
               { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
               { text: "备份删除系统", color: "yellow" }
-            ])}`
+            ]
           );
           this.Pending = "delete";
           this.showPage(0, "wholeWorld", "delete");
@@ -440,12 +435,11 @@ class QuickBackup extends BasePlugin {
     console.log(list, command);
     let List = this.getBackupList(list);
     if (!List.length) {
-      await this.CommandSender(
-        `tellraw @a ${JSON.stringify([
+      await this.tellraw(`@a`,[
           { text: "[备份系统]", color: "green", bold: true },
           { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
           { text: "找不到可用的备份文件", color: "red" }
-        ])}`
+        ]
       );
       return;
     }
@@ -541,35 +535,31 @@ class QuickBackup extends BasePlugin {
     console.log(`[${moment().format("HH:mm:ss")}]运行备份 备注:${comment}`);
     let FileName = `${comment}.tar.gz`;
     let Path = `/tmp/Minecraft/${FileName}`;
-    await this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    await this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "服务器正在备份...", color: "yellow" }
-      ])}`
+      ]
     );
-    await this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    await this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "正在保存存档 ", color: "yellow" },
         { text: "请勿快速移动", color: "red" }
-      ])}`
+      ]
     );
     await this.CommandSender("save-all");
-    await this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    await this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "存档保存成功", color: "green" }
-      ])}`
+      ]
     );
-    await this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    await this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "正在打包存档", color: "yellow" }
-      ])}`
+      ]
     );
     await fs.ensureDir("/tmp/Minecraft/world");
     let CleanList = fs.readdirSync("/tmp/Minecraft").filter(a => /tar\.gz/.test(a));
@@ -582,36 +572,32 @@ class QuickBackup extends BasePlugin {
     await fs.emptyDir("/tmp/Minecraft/world");
     let Stat = fs.statSync(Path);
     let Size = Stat.size / 1048576;
-    await this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    await this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "存档打包完成 存档大小:", color: "green" },
         { text: `${Size.toFixed(2)}M`, color: "yellow", bold: true }
-      ])}`
+      ]
     );
-    await this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    await this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "正在上传存档到备份服务器", color: "yellow" }
-      ])}`
+      ]
     );
     await fs.move(Path, `${this.wholeWorldDest}/${FileName}`);
-    await this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    await this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "存档上传成功", color: "green" }
-      ])}`
+      ]
     );
 
-    await this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    await this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "备份进程结束", color: "yellow" }
-      ])}`
+      ]
     );
   }
   async RunBackupPlayerData(comment) {
@@ -643,15 +629,14 @@ class QuickBackup extends BasePlugin {
         }
         this.RunBackup(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`)
           .then(() => {
-            return this.CommandSender(
-              `tellraw @a ${JSON.stringify([
+            return this.tellraw(`@a`,[
                 { text: "[自动备份系统]", color: "green", bold: true },
                 { text: `如果你正在进行大型项目的建设，可通过命令:\n`, color: "gold", bold: true },
                 { text: "!!qb", color: "yellow" },
                 { text: " make ", color: "aqua" },
                 { text: "<备注信息>", color: "red" },
                 { text: "\n来进行存档的备份", color: "aqua" }
-              ])}`
+              ]
             );
           })
           .catch(() => { });
@@ -662,15 +647,14 @@ class QuickBackup extends BasePlugin {
         this.RunBackupPlayerData(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`).catch(() => { });
       }
     });
-    return this.CommandSender(
-      `tellraw @a ${JSON.stringify([
+    return this.tellraw(`@a`,[
         { text: "[自动备份系统]", color: "green", bold: true },
         { text: `如果你正在进行大型项目的建设，可通过命令:\n`, color: "gold", bold: true },
         { text: "!!qb", color: "yellow" },
         { text: " make ", color: "aqua" },
         { text: "<备注信息>", color: "red" },
         { text: "\n来进行存档的备份", color: "aqua" }
-      ])}`
+      ]
     );
   }
   Pause() {

@@ -17,7 +17,10 @@ class TelePort extends BasePlugin {
           .map(a => a.trim())
           .filter(name => {
             if (name.length >= Targetn.length) {
-              return Targetn.toLowerCase() == name.substr(0, Targetn.length).toLowerCase();
+              return (
+                Targetn.toLowerCase() ==
+                name.substr(0, Targetn.length).toLowerCase()
+              );
             }
           });
         if (List.length == 1) {
@@ -28,53 +31,65 @@ class TelePort extends BasePlugin {
           let MyHealth = HealthList[Player];
           let TargetHealth = HealthList[Target];
           if (MyHealth <= 2) {
-            this.CommandSender(
-              `tellraw ${Player} ${JSON.stringify([{ text: `濒死状态无法进TP操作`, color: "red", bold: false }])}`
-            ).catch(() => { });
-            this.CommandSender(
-              `tellraw ${Target} ${JSON.stringify([
-                { text: `${Player} 尝试TP到你，但是由于他的血量过低，TP失败`, color: "red", bold: false }
-              ])}`
-            ).catch(() => { });
+            this.tellraw(`${Player}`, [
+              { text: `濒死状态无法进TP操作`, color: "red", bold: false },
+            ]).catch(() => {});
+            this.tellraw(`${Target}`, [
+              {
+                text: `${Player} 尝试TP到你，但是由于他的血量过低，TP失败`,
+                color: "red",
+                bold: false,
+              },
+            ]).catch(() => {});
             return;
           }
           if (TargetHealth <= 8) {
-            this.CommandSender(
-              `tellraw ${Player} ${JSON.stringify([
-                { text: `你TP的目标${Target}血量过低，TP失败`, color: "red", bold: true }
-              ])}`
-            ).catch(() => { });
-            this.CommandSender(
-              `tellraw ${Target} ${JSON.stringify([
-                { text: `${Player} 尝试TP到你，但是由于你的血量过低，TP失败`, color: "red", bold: true }
-              ])}`
-            ).catch(() => { });
+            this.tellraw(`${Player}`, [
+              {
+                text: `你TP的目标${Target}血量过低，TP失败`,
+                color: "red",
+                bold: true,
+              },
+            ]).catch(() => {});
+            this.tellraw(`${Target}`, [
+              {
+                text: `${Player} 尝试TP到你，但是由于你的血量过低，TP失败`,
+                color: "red",
+                bold: true,
+              },
+            ]).catch(() => {});
             return;
           }
           console.log(`执行 ` + `tp ${Player} ${Target}`);
-          this.CommandSender(
-            `tellraw ${Player} ${JSON.stringify([{ text: `2秒后TP到${Target}`, color: "green", bold: true }])}`
-          ).catch(() => { });
-          this.CommandSender(
-            `tellraw ${Target} ${JSON.stringify([{ text: `2秒后${Player} TP到你`, color: "green", bold: true }])}`
-          ).catch(() => { });
+          this.tellraw(`${Player}`, [
+            { text: `2秒后TP到${Target}`, color: "green", bold: true },
+          ]).catch(() => {});
+          this.tellraw(`${Target}`, [
+            { text: `2秒后${Player} TP到你`, color: "green", bold: true },
+          ]).catch(() => {});
           setTimeout(() => {
             if (this.newVersion) {
-              this.CommandSender(`tp @e[limit=1,name="${Player}"] @e[limit=1,name="${Target}"]`).catch(() => { });
+              this.CommandSender(
+                `tp @e[limit=1,name="${Player}"] @e[limit=1,name="${Target}"]`
+              ).catch(() => {});
             } else {
-              this.CommandSender(`tp ${Player} ${Target}`).catch(() => { });
+              this.CommandSender(`tp ${Player} ${Target}`).catch(() => {});
             }
           }, 2000);
         } else {
-          this.CommandSender(
-            `tellraw ${Player} ${JSON.stringify([{ text: "非唯一目标", color: "red", bold: true }])}`
-          ).catch(() => { });
+          this.tellraw(`${Player}`, [
+            { text: "非唯一目标", color: "red", bold: true },
+          ]).catch(() => {});
         }
       })
-      .catch(() => { });
+      .catch(() => {});
   }
   async Start() {
-    await this.Scoreboard.ensureScoreboard({ name: "Health", type: "health", displayname: "health" });
+    await this.Scoreboard.ensureScoreboard({
+      name: "Health",
+      type: "health",
+      displayname: "health",
+    });
     await this.Scoreboard.displayScoreboard("Health", "list");
   }
 }

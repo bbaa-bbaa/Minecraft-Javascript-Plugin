@@ -19,6 +19,9 @@ class BasePlugin {
     return this.Core.RconClient.send(...arguments).catch(this.Core.ErrorHandle.bind(this.Core));
   }
   async tellraw(Dest, Json) {
+    if(this.newVersion && !/@/.test(Dest)) {
+      Dest=`@e[name="${Dest}"]`;
+    }
     let startWith = `tellraw ${Dest} `;
     let newJson = [[]];
     for (let Item of Json) {
