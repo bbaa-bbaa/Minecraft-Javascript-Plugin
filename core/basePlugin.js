@@ -1,26 +1,46 @@
+const { deepStrictEqual } = require("assert");
 const crypto = require("crypto");
-const uuid = require("uuid").stringify
+const uuid = require("uuid").stringify;
 class BasePlugin {
   constructor(Core) {
     this.Core = Core;
     const hash = crypto.createHash("sha1");
     this.Scoreboard_Prefix = hash.update(this.constructor.name).digest("hex");
   }
-  ConvertUUID(_IntArray){
+  ConvertUUID(_IntArray) {
     const arr = new ArrayBuffer(16);
     const view = new DataView(arr);
     //let  _IntArray = [-1632430930, -1307881510, -1319685969, 644903231]
     for (let [i, item] of _IntArray.entries()) {
       view.setInt32(i * 4, item, false);
     }
-    return uuid(new Uint8Array(arr))
+    return uuid(new Uint8Array(arr));
+  }
+  async getUUID(Player) {
+    return this.ConvertUUID(
+      await this.CommandSender(
+        this.newVersion
+          ? `data get entity @e[limit=1,name="${Player}"] UUID`
+          : "; 0,0,0,0"
+      )
+        .then(a => {
+          return a
+            .split(";")[1]
+            .replace(/\]/g, "")
+            .split(",")
+            .map(b => Number(b.trim()));
+        })
+        .catch(b => [0, 0, 0, 0])
+    );
   }
   CommandSender() {
-    return this.Core.RconClient.send(...arguments).catch(this.Core.ErrorHandle.bind(this.Core));
+    return this.Core.RconClient.send(...arguments).catch(
+      this.Core.ErrorHandle.bind(this.Core)
+    );
   }
   async tellraw(Dest, Json) {
-    if(this.newVersion && !/@/.test(Dest)) {
-      Dest=`@e[name="${Dest}"]`;
+    if (this.newVersion && !/@/.test(Dest)) {
+      Dest = `@e[name="${Dest}",type=minecraft:player]`;
     }
     let startWith = `tellraw ${Dest} `;
     let newJson = [[]];
@@ -35,8 +55,25 @@ class BasePlugin {
       } else if (/^\n/.test(Item.text)) {
         Item.text = Item.text.toString().replace(/^\n/, "");
         newJson.push([Item]);
+      } else if(Item instanceof Array) {
+        for(let it of Item) {
+          if (/^\n/.test(it.text) && /\n$/.test(it.text)) {
+            it.text = it.text.toString().replace(/^\n/, "");
+            newJson.push([it]);
+          } else if (/\n$/.test(it.text)) {
+            it.text = it.text.toString().replace(/\n$/, "");
+            newJson[newJson.length - 1].push(it);
+            newJson.push([]);
+          } else if (/^\n/.test(it.text)) {
+            it.text = it.text.toString().replace(/^\n/, "");
+            newJson.push([it]);
+          } else {
+            it.text = it.text.toString();
+            newJson[newJson.length - 1].push(it);
+          }
+        }
       } else {
-        Item.text = Item.text.toString()
+        Item.text = Item.text.toString();
         newJson[newJson.length - 1].push(Item);
       }
     }
@@ -85,8 +122,8 @@ class BasePlugin {
     }
     return Mapping;
   }
-  get newVersion(){
-    return this.Core.options.newVersion||false;
+  get newVersion() {
+    return this.Core.options.newVersion || false;
   }
 }
 module.exports = BasePlugin;
