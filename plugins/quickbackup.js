@@ -165,6 +165,7 @@ class QuickBackup extends BasePlugin {
           ]);
           clearTimeout(this.backPending.Timer);
           this.backPending.Timer = setTimeout(() => {
+            this.cancelAllPending()
             this.tellraw("@a", [
               { text: "[备份系统]", color: "green", bold: true },
               { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
@@ -198,9 +199,7 @@ class QuickBackup extends BasePlugin {
           this.Pending = "backpd";
           this.backpdPending.choice = List[0];
           this.backpdPending.requester.name = Player;
-          this.backpdPending.requester.uuid = this.ConvertUUID(await this.CommandSender(this.newVersion ? `data get entity @e[limit=1,name="${Player}"] UUID`:"fuwef").then(a => {
-            return a.split(";")[1].replace(/\]/g, "").split(",").map(b => Number(b.trim()))
-          }).catch(b => [0, 0, 0, 0]));
+          this.backpdPending.requester.uuid = await this.getUUID(Player);
           if(this.backpdPending.requester.uuid=="00000000-0000-0000-0000-000000000000") {
             this.tellraw("@a", [
               { text: "[备份系统]", color: "green", bold: true },
@@ -240,6 +239,7 @@ class QuickBackup extends BasePlugin {
           ]);
           clearTimeout(this.backpdPending.Timer);
           this.backpdPending.Timer = setTimeout(() => {
+            this.cancelAllPending()
             this.tellraw("@a", [
               { text: "[备份系统]", color: "green", bold: true },
               { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
