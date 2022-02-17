@@ -604,9 +604,10 @@ class QuickBackup extends BasePlugin {
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
     console.log(`[${moment().format("HH:mm:ss")}]运行玩家数据 备注:${comment}`);
     let FileName = `${comment}`;
-    let ServerFile = klawSync(this.PlayerDataDest).sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
-    for (let File of ServerFile.slice(30)) {
-      if (new Date().getTime() - File.stats.mtimeMs > 1800000) {
+    let ServerFile = klawSync(this.PlayerDataDest,{nofile:true}).sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+    //console.log(ServerFile)
+    for (let File of ServerFile.slice(60)) {
+      if ((new Date().getTime() - File.stats.mtimeMs) > 3600000) {
         await fs.remove(File.path);
       }
     }
