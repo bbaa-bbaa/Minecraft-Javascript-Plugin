@@ -35,7 +35,7 @@ class LogFileReader {
     const readFilef = _.debounce(this.readPartFile.bind(this), 100);
     const openLogFilef = _.debounce((a) => {
       this.closeLogFile();
-      this.openLogFile.bind(a);
+      this.openLogFile(a);
     }, 1000);
     try {
       const watcher = fs.promises.watch(this.path, { signal: this.ac.signal });
