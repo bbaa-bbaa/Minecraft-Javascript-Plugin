@@ -8,7 +8,7 @@ function parseText(Text) {
   let regexp = /\[([^\]]*?)\]([^\[]+)/g;
   let match;
   let Formatted = [];
-  let lastOption = {};
+  let lastOption =[];
   while ((match = regexp.exec(Text))) {
     let [_unused, _options, text] = match;
     _options = _options.split(",");
@@ -26,16 +26,14 @@ function parseText(Text) {
       Object.assign(f, { color });
     }
     let _o = {};
-    for (let [option, Value] of Object.entries(lastOption)) {
-      if (Value) {
+    for (let option of lastOption) {
         _o[option] = false;
-      }
     }
     for (let option of options) {
       _o[option] = true;
     }
     Object.assign(f, _o);
-    lastOption = _o;
+    lastOption = options;
     Formatted.push(f);
   }
   return Formatted;
@@ -58,7 +56,7 @@ class ChangeColor extends BasePlugin {
       let Tag = basenbt.tag;
       let FormatArray = [];
       try {
-        if (!Tag) Tag={}
+        if (!Tag) Tag = {};
         if (!Tag.display) Tag.display = {};
         FormatArray = parseText(args);
         Tag.display.Name = JSON.stringify(FormatArray);
