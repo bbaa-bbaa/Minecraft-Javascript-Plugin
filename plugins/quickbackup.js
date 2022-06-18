@@ -13,14 +13,14 @@ class QuickBackup extends BasePlugin {
   constructor() {
     super(...arguments);
     this.schedule = null;
-    this.backupDest = "/home/bbaa/mc118Backup";
+    this.backupDest = "/data/mcBackup";
     this.wholeWorldDest = this.backupDest + "/World";
     this.PlayerDataDest = this.backupDest + "/Playerdata";
     this.SaveSource = `${this.Core.BaseDir}/world`;
     this.RunServer = `${this.Core.BaseDir}/runserver`;
     fs.ensureDir(this.backupDest);
     fs.ensureDir(this.wholeWorldDest);
-    fs.ensureDir(this.PlayerDataDest)
+    fs.ensureDir(this.PlayerDataDest);
     this.backPending = {
       Timer: 0,
       choice: "",
