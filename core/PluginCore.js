@@ -76,9 +76,9 @@ class PluginCore {
         this.RconClient.on("error", this.ErrorHandle.bind(this));
         this.EventBus.emit("connected");
       })
-      .catch(() => {
+      .catch((e) => {
         this.Error = false;
-        this.ErrorHandle();
+        this.ErrorHandle(e);
       });
   }
   reconnectRcon(name) {

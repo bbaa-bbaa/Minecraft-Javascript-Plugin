@@ -1,5 +1,6 @@
 const fs = require("fs");
 const _ = require("lodash");
+const chokidar = require("chokidar");
 class LogFileReader {
   constructor(Core, path) {
     this.Handle = null;
@@ -12,45 +13,41 @@ class LogFileReader {
   }
   async readPartFile() {
     const curr = { size: (await fs.promises.stat(this.path)).size };
-    if (curr.size - this.Pos <= 0) return;
-    this.Handle.read(
-      Buffer.alloc(curr.size - this.Pos),
-      0,
-      curr.size - this.Pos,
-      this.Pos
-    )
-      .then(({ bytesRead, buffer }) => {
+    let diff = curr.size - this.Pos;
+    console.log(`读取日志文件${diff}:${this.Pos}->${curr.size}`);
+    if (diff < 0) {
+      await this.closeLogFile();
+      await this.openLogFile("LogFileUpdate");
+      this.Pos = 0;
+      diff = curr.size - this.Pos;
+      return;
+    } else if(!diff) {
+      return
+    }
+    let buf=Buffer.alloc(diff)
+    this.Handle.read(buf, 0, diff, this.Pos)
+      .then(() => {
         this.Pos = curr.size;
-        let Str = buffer.toString("utf8").split("\n");
-        for (let Line of Str) {
-          if (Line.length == 0) continue;
+        let Lines = buf.toString("utf8").split("\n");
+        for (let Line of Lines) {
+          if (Line.length == 0) {
+            continue;
+          }
           this.Core.ProcessLog(Line);
         }
       })
-      .catch(() => {});
+      .catch(e => {
+        console.log(e);
+      });
   }
   async watchLogfile() {
     console.log("在[" + this.path + "]注册文件监听器");
     this.ac = new AbortController();
     const readFilef = _.debounce(this.readPartFile.bind(this), 100);
-    const openLogFilef = _.debounce((a) => {
-      this.closeLogFile();
-      this.openLogFile(a);
-    }, 1000);
     try {
-      const watcher = fs.promises.watch(this.path, { signal: this.ac.signal });
-      for await (const event of watcher) {
-        switch (event.eventType) {
-          case "change":
-            readFilef();
-            break;
-          case "rename":
-            if (/latest/.test(event.filename)) {
-              openLogFilef("FileWatcher")
-            }
-            break;
-        }
-      }
+      this.watcher = chokidar.watch(this.path).on("all", (event, path) => {
+        readFilef();
+      });
     } catch (e) {}
   }
   async openLogFile(r = "WatcherInit") {
@@ -60,19 +57,19 @@ class LogFileReader {
       console.log(`[${r}]打开日志 位移` + this.Pos);
     } catch (e) {
       console.error(e);
-      this.openLogFile(r);
+      return this.openLogFile(r);
     }
     // fs.watchFile(this.path, { interval: 100 }, (...args)=>{this.readPartFile(...args)});
   }
   async closeLogFile() {
     //fs.unwatchFile(this.path)
-    this.Handle.close();
     console.log("关闭日志文件");
+    return this.Handle.close();
   }
-  close() {
+  async close() {
     console.log("关闭日志Watcher");
-    this.ac.abort();
-    this.closeLogFile();
+    await this.watcher.close();
+    return this.closeLogFile();
   }
 }
 module.exports = LogFileReader;
