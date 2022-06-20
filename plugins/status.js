@@ -3,7 +3,7 @@ const si = require("systeminformation");
 const cpu = require("cpu");
 const moment = require("moment");
 const os = require("os");
-let WorldMapping = {
+let _WorldMapping = {
   overworld: "主世界",
   Overall: "所有",
   vox_ponds: "未知",
@@ -29,8 +29,13 @@ let WorldMapping = {
   shyrelands: "塞尔瑞",
   lunalus: "月球",
   haven: "天堂",
-  abyss: "深渊"
+  abyss: "深渊",
+  nether: "地狱"
 };
+let WorldMapping = {};
+for (let [name, value] of Object.entries(_WorldMapping)) {
+  WorldMapping[name.toUpperCase()] = value;
+}
 class Status extends BasePlugin {
   static PluginName = "监控";
   constructor() {
@@ -61,65 +66,66 @@ class Status extends BasePlugin {
     }, 1000);
   }
   async status(force = false) {
-    let Mem = await si.mem();
-    this.tellraw(`@a`, [
-      { text: "[监控系统]", color: "green", bold: true },
-      { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
-      ...this.Info.cpu.map((cpu, idx) => {
-        return [
-          { text: `CPU#${idx}:`, color: "aqua" },
-          { text: `${cpu}% `, color: Number(cpu) < 40 ? "green" : Number(cpu) < 60 ? "yellow" : "red" }
-        ];
-      })
-    ]);
-    this.tellraw(`@a`, [
-      { text: "[监控系统]", color: "green", bold: true },
-      { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
-      ...os.loadavg().map((la, idx) => {
-        la = la.toFixed(2);
-        return [
-          { text: `Loadavg#${["1min", "5min", "15min"][idx]}:`, color: "aqua" },
-          {
-            text: `${la} `,
-            color:
-              Number(la / this.Info.cpu.length) < 0.4
-                ? "green"
-                : Number(la / this.Info.cpu.length) < 0.6
-                ? "yellow"
-                : "red"
-          }
-        ];
-      })
-    ]);
-    this.tellraw(`@a`, [
-      { text: "[监控系统]", color: "green", bold: true },
-      { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
-      { text: `物理内存使用:`, color: "aqua" },
-      {
-        text: `${(Mem.active / 1024 / 1024).toFixed(2)}M/${(Mem.total / 1024 / 1024).toFixed(2)}M`,
-        color: "green"
-      }
-    ]);
-    this.tellraw(`@a`, [
-      { text: "[监控系统]", color: "green", bold: true },
-      { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
-      { text: `虚拟内存使用:`, color: "aqua" },
-      {
-        text: `${(Mem.swapused / 1024 / 1024).toFixed(2)}M/${(Mem.swaptotal / 1024 / 1024).toFixed(2)}M`,
-        color: "green"
-      }
-    ]);
-    this.tellraw(`@a`, [
-      { text: "[监控系统]", color: "green", bold: true },
-      { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
-      { text: `网络:  `, color: "aqua" },
-      { text: `${(this.Info.network.rx / 1024).toFixed(2)}KB/s↓   `, color: "green" },
-      { text: `${(this.Info.network.tx / 1024).toFixed(2)}KB/s↑`, color: "green" }
-    ]);
+    if (force) {
+      let Mem = await si.mem();
+      this.tellraw(`@a`, [
+        { text: "[监控系统]", color: "green", bold: true },
+        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        ...this.Info.cpu.map((cpu, idx) => {
+          return [
+            { text: `CPU#${idx}:`, color: "aqua" },
+            { text: `${cpu}% `, color: Number(cpu) < 40 ? "green" : Number(cpu) < 60 ? "yellow" : "red" }
+          ];
+        })
+      ]);
+      this.tellraw(`@a`, [
+        { text: "[监控系统]", color: "green", bold: true },
+        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        ...os.loadavg().map((la, idx) => {
+          la = la.toFixed(2);
+          return [
+            { text: `Loadavg#${["1min", "5min", "15min"][idx]}:`, color: "aqua" },
+            {
+              text: `${la} `,
+              color:
+                Number(la / this.Info.cpu.length) < 0.4
+                  ? "green"
+                  : Number(la / this.Info.cpu.length) < 0.6
+                  ? "yellow"
+                  : "red"
+            }
+          ];
+        })
+      ]);
+      this.tellraw(`@a`, [
+        { text: "[监控系统]", color: "green", bold: true },
+        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `物理内存使用:`, color: "aqua" },
+        {
+          text: `${(Mem.active / 1024 / 1024).toFixed(2)}M/${(Mem.total / 1024 / 1024).toFixed(2)}M`,
+          color: "green"
+        }
+      ]);
+      this.tellraw(`@a`, [
+        { text: "[监控系统]", color: "green", bold: true },
+        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `虚拟内存使用:`, color: "aqua" },
+        {
+          text: `${(Mem.swapused / 1024 / 1024).toFixed(2)}M/${(Mem.swaptotal / 1024 / 1024).toFixed(2)}M`,
+          color: "green"
+        }
+      ]);
+      this.tellraw(`@a`, [
+        { text: "[监控系统]", color: "green", bold: true },
+        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `网络:  `, color: "aqua" },
+        { text: `${(this.Info.network.rx / 1024).toFixed(2)}KB/s↓   `, color: "green" },
+        { text: `${(this.Info.network.tx / 1024).toFixed(2)}KB/s↑`, color: "green" }
+      ]);
+    }
     this.CommandSender("forge tps")
       .then(async statustext => {
         let re = /.*?(\(.*?\)|Overall).:.*?tick time:.(.*?).ms.*?TPS:.(.{6})/g;
-        //console.log(statustext,re.exec(statustext))
         let worldStatus;
         while ((worldStatus = re.exec(statustext))) {
           let [Source, World, MSPT, TPS] = worldStatus;
@@ -137,9 +143,8 @@ class Status extends BasePlugin {
               this.MSPTDiffCount += Math.round(MSPTDiff / 5);
             }
             if (Math.abs(MSPTDiff) > 5) {
-              console.log(`负载异动:${this.MSPTDiffCount} MSPT:${MSPT}`);
+              console.log(`[${this.constructor.PluginName}]负载异动:${this.MSPTDiffCount} MSPT:${MSPT}`);
             }
-            // if (Math.abs(this.MSPTDiffCount) < 4) return;
             if (this.MSPTDiffCount >= 6) {
               this.tellraw(`@a`, [
                 { text: "[监控系统]", color: "yellow", bold: true },
@@ -169,9 +174,10 @@ class Status extends BasePlugin {
           if (MSPT < 0.5) continue;
           let Color = TPS == 20 ? "green" : TPS > 15 ? "yellow" : "red";
           this.tellraw(`@a`, [
+            { text: "[监控系统]", color: "green", bold: true },
             { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
             { text: `世界:`, color: "aqua" },
-            { text: WorldMapping[World] || World, color: "green", bold: true },
+            { text: WorldMapping[World.toUpperCase()] || World, color: "green", bold: true },
             { text: ` TPS:`, color: "aqua" },
             { text: TPS, color: Color },
             { text: ` MSPT:`, color: "aqua" },
@@ -183,9 +189,13 @@ class Status extends BasePlugin {
       })
       .catch(() => {});
   }
-  Start() {}
+  Start() {
+    this.LoopId = setInterval(() => {
+      this.status();
+    }, 5000);
+  }
   Pause() {
-    //   clearInterval(this.LoopId);
+    clearInterval(this.LoopId);
   }
 }
 module.exports = Status;

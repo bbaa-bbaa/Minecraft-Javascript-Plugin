@@ -1,6 +1,7 @@
-const { deepStrictEqual } = require("assert");
 const crypto = require("crypto");
+const fs = require("fs");
 const uuid = require("uuid").stringify;
+let uuidCache = {};
 class BasePlugin {
   constructor(Core) {
     this.Core = Core;
@@ -10,33 +11,42 @@ class BasePlugin {
   ConvertUUID(_IntArray) {
     const arr = new ArrayBuffer(16);
     const view = new DataView(arr);
-    //let  _IntArray = [-1632430930, -1307881510, -1319685969, 644903231]
     for (let [i, item] of _IntArray.entries()) {
       view.setInt32(i * 4, item, false);
     }
     return uuid(new Uint8Array(arr));
   }
   async getUUID(Player) {
-    return this.ConvertUUID(
-      await this.CommandSender(
-        this.newVersion
-          ? `data get entity @e[limit=1,name="${Player}"] UUID`
-          : "; 0,0,0,0"
-      )
-        .then(a => {
-          return a
-            .split(";")[1]
-            .replace(/\]/g, "")
-            .split(",")
-            .map(b => Number(b.trim()));
-        })
-        .catch(b => [0, 0, 0, 0])
-    );
+    if (uuidCache[Player]) return uuidCache[Player];
+    if (this.newVersion) {
+      uuidCache[Player] = this.ConvertUUID(
+        await this.CommandSender(this.newVersion ? `data get entity @e[type="minecraft:player",limit=1,name="${Player}"] UUID` : "; 0,0,0,0")
+          .then(a => {
+            return a
+              .split(";")[1]
+              .replace(/\]/g, "")
+              .split(",")
+              .map(b => Number(b.trim()));
+          })
+          .catch(b => [0, 0, 0, 0])
+      );
+    } else {
+      let UUIDLIST = (await fs.promises.readdir(`${this.Core.BaseDir}/world/playerdata`))
+        .filter(a => /\.dat$/.test(a))
+        .map(a => a.split(".").shift());
+      for (let UUID of UUIDLIST) {
+        let Playername = (await this.CommandSender(`scoreboard players list ${UUID}`)).match(
+          /Showing \d* tracked objective\(s\) for (.*?):/
+        );
+        if (Playername) {
+          uuidCache[Playername[1]] = UUID;
+        }
+      }
+    }
+    return uuidCache[Player];
   }
-  CommandSender() {
-    return this.Core.RconClient.send(...arguments).catch(
-      this.Core.ErrorHandle.bind(this.Core)
-    );
+  async CommandSender() {
+    return this.Core.RconClient.send(...arguments).catch(this.Core.ErrorHandle.bind(this.Core));
   }
   async tellraw(Dest, Json) {
     if (this.newVersion && !/@/.test(Dest)) {
@@ -55,8 +65,8 @@ class BasePlugin {
       } else if (/^\n/.test(Item.text)) {
         Item.text = Item.text.toString().replace(/^\n/, "");
         newJson.push([Item]);
-      } else if(Item instanceof Array) {
-        for(let it of Item) {
+      } else if (Item instanceof Array) {
+        for (let it of Item) {
           if (/^\n/.test(it.text) && /\n$/.test(it.text)) {
             it.text = it.text.toString().replace(/^\n/, "");
             newJson.push([it]);

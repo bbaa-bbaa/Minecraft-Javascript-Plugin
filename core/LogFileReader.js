@@ -14,7 +14,7 @@ class LogFileReader {
   async readPartFile() {
     const curr = { size: (await fs.promises.stat(this.path)).size };
     let diff = curr.size - this.Pos;
-    console.log(`读取日志文件${diff}:${this.Pos}->${curr.size}`);
+    console.log(`[PluginsCore:LogFileReader]读取日志文件${diff}:${this.Pos}->${curr.size}`);
     if (diff < 0) {
       await this.closeLogFile();
       await this.openLogFile("LogFileUpdate");
@@ -41,7 +41,7 @@ class LogFileReader {
       });
   }
   async watchLogfile() {
-    console.log("在[" + this.path + "]注册文件监听器");
+    console.log("[PluginsCore:LogFileReader]在[" + this.path + "]注册文件监听器");
     this.ac = new AbortController();
     const readFilef = _.debounce(this.readPartFile.bind(this), 100);
     try {
@@ -59,15 +59,13 @@ class LogFileReader {
       console.error(e);
       return this.openLogFile(r);
     }
-    // fs.watchFile(this.path, { interval: 100 }, (...args)=>{this.readPartFile(...args)});
   }
   async closeLogFile() {
-    //fs.unwatchFile(this.path)
-    console.log("关闭日志文件");
+    console.log("[PluginsCore:LogFileReader]关闭日志文件");
     return this.Handle.close();
   }
   async close() {
-    console.log("关闭日志Watcher");
+    console.log("[PluginsCore:LogFileReader]关闭日志Watcher");
     await this.watcher.close();
     return this.closeLogFile();
   }

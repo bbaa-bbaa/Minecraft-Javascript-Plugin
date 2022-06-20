@@ -25,7 +25,6 @@ class TelePort extends BasePlugin {
           });
         if (List.length == 1) {
           let Target = List[0];
-          //do Check
           await this.updateScore(this);
           let HealthList = await this.getScoreByName("Health");
           let MyHealth = HealthList[Player];
@@ -60,7 +59,7 @@ class TelePort extends BasePlugin {
             ]).catch(() => {});
             return;
           }
-          console.log(`执行 ` + `tp ${Player} ${Target}`);
+          console.log(`[${this.constructor.PluginName}]执行 ` + `tp ${Player} ${Target}`);
           this.tellraw(`${Player}`, [
             { text: `2秒后TP到${Target}`, color: "green", bold: true },
           ]).catch(() => {});
@@ -70,7 +69,7 @@ class TelePort extends BasePlugin {
           setTimeout(() => {
             if (this.newVersion) {
               this.CommandSender(
-                `tp @e[limit=1,name="${Player}"] @e[limit=1,name="${Target}"]`
+                `tp @e[type="minecraft:player",limit=1,name="${Player}"] @e[type="minecraft:player",limit=1,name="${Target}"]`
               ).catch(() => {});
             } else {
               this.CommandSender(`tp ${Player} ${Target}`).catch(() => {});
