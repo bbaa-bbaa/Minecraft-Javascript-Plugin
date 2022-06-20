@@ -1,5 +1,5 @@
 require('./.pnp.cjs').setup();
-let PluginCore = require("./core/PluginCore");
+const PluginCore = require("./core/PluginCore");
 const fs = require("fs-extra");
 let Plugines = new PluginCore({
   Rcon: { host: "127.0.0.1", port: 25575, password: "bbaa" },

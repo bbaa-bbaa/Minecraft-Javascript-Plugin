@@ -45,13 +45,13 @@ class PluginCore {
   registerPlugin(Constructor) {
     let PluginClass = Constructor;
     if (this.PluginInterfaces.has(PluginClass.name)) {
-      return console.log(`${PluginClass.PluginName} already loaded skipping`);
+      return console.log(`${PluginClass.PluginName} 已经加载，跳过本次加载`);
     }
     let PluginInterface = new PluginClass(this);
     this.PluginInterfaces.set(PluginClass.name, PluginInterface);
     PluginInterface._state = "Paused";
     PluginInterface.init(this.genRegisterHelper(PluginInterface));
-    console.log(`${PluginClass.PluginName} loaded finish`);
+    console.log(`[PluginsCore]${PluginClass.PluginName} 加载完成`);
   }
   addPluginRegister(func, scope) {
     this.PluginRegisters.push({ func: func.bind(scope), scope: scope, name: func.name });
@@ -66,7 +66,7 @@ class PluginCore {
     return Root;
   }
   registerNativeLogProcesser(regexp, func, scope) {
-    console.log(`${scope.constructor.PluginName} register a Native Log Processor ${func.name} match:(regex)${regexp}`);
+    console.log(`[PluginsCore]${scope.constructor.PluginName} 注册了一个原始日志处理器 ${func.name||`(anonymous)`} match:(regex)${regexp}`);
     this.NativeLogProcessers.push({ regexp: regexp, func: func, scope: scope });
   }
   connectRconClient(options) {
@@ -83,9 +83,9 @@ class PluginCore {
   }
   reconnectRcon(name) {
     this.EventBus.emit("disconnected");
-    console.log(`[${name}]请求重连`);
+    console.log(`[${name}]请求重连Rcon`);
     setTimeout(() => {
-      console.log("正在重连");
+      console.log("[PluginsCore:Rcon]正在重连");
       this.connectRconClient(this.options);
     }, 10000);
   }
@@ -100,7 +100,7 @@ class PluginCore {
       }
       Plugin._state = "Started";
     }
-    console.log("Rcon Connected");
+    console.log("[PluginsCore:Rcon]Rcon Connected");
     this.Error = false;
   }
   Disconnected() {
@@ -120,19 +120,18 @@ class PluginCore {
     if (((this.RconClient.socket && this.RconClient.socket.destoryed) || !this.RconClient.socket) && !this.Error) {
       this.Error = true;
       this.EventBus.emit("disconnected");
-      console.log("发生错误10s后重新链接");
+      console.log("[PluginsCore:Rcon]发生错误10s后重新链接");
       if (this.Crashed) {
         this.Crashed = false;
         await runCommand(`${this.BaseDir}/runserver`);
       }
       setTimeout(() => {
-        console.log("正在重连");
+        console.log("[PluginsCore:Rcon]正在重连");
         this.connectRconClient(this.options);
       }, 10000);
     }
   }
   ProcessLog(line) {
-    //console.log(line)
     for (let Processr of this.NativeLogProcessers) {
       if (Processr.regexp.test(line)) {
         try {

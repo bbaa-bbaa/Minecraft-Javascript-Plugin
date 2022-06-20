@@ -7,7 +7,6 @@ const schedule = require("node-schedule");
 const runCommand = util.promisify(cp.exec);
 const klawSync = require("klaw-sync");
 const path = require("path");
-const { json } = require("stream/consumers");
 class QuickBackup extends BasePlugin {
   static PluginName = "快速备份";
   constructor() {
@@ -176,10 +175,9 @@ class QuickBackup extends BasePlugin {
           await this.tellraw(`@a`, [
             { text: "[备份系统]", color: "green", bold: true },
             { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
-            { text: "自助回档服务：", color: "yellow" },
-            { text: "回档玩家数据不支持该版本", color: "red" }
+            { text: "自助回档服务：", color: "aqua" },
+            { text: "回档玩家数据在该版本未经测试，谨慎使用", color: "red" }
           ]);
-          return;
         }
         if (args.length == 1) {
           await this.tellraw(`@a`, [
@@ -424,12 +422,11 @@ class QuickBackup extends BasePlugin {
     } else if (list == "playerData") {
       let BackupList = klawSync(this.PlayerDataDest, {
         nofile: true,
-        depthLimit:0
+        depthLimit: 0
       }).map(a => {
         a.filename = a.path.split("/").pop();
         return a;
       });
-      // console.log(BackupList)
       return BackupList.sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
     }
   }
@@ -437,7 +434,7 @@ class QuickBackup extends BasePlugin {
     if (!command) {
       command = this.Pending;
     }
-    console.log(list, command);
+    console.log(`[${this.constructor.PluginName}]`,list, command);
     let List = this.getBackupList(list);
     if (!List.length) {
       await this.tellraw(`@a`, [
@@ -447,11 +444,11 @@ class QuickBackup extends BasePlugin {
       ]);
       return;
     }
-    let All = Math.floor(List.length / 5);
+    let All = Math.ceil(List.length / 5);
     let showList = List.slice(page * 5, page * 5 + 5);
     let showJSON = [
       { text: "[备份系统]", color: "green", bold: true },
-      { text: `正在查看第${page + 1}页/共${Math.ceil(List.length / 5)}页\n`, color: "aqua" }
+      { text: `正在查看第${page + 1}页/共${All}页\n`, color: "aqua" }
     ];
     for (let [idx, Item] of showList.entries()) {
       showJSON.push(
@@ -474,59 +471,55 @@ class QuickBackup extends BasePlugin {
       { text: "|", color: "yellow" },
       {
         text: "下一页",
-        color: page == All ? "gray" : "green",
-        clickEvent: page == All ? {} : { action: "run_command", value: `!!qb showpage ${list} ${page + 1}` }
+        color: page == All - 1 ? "gray" : "green",
+        clickEvent: page == All - 1 ? {} : { action: "run_command", value: `!!qb showpage ${list} ${page + 1}` }
       },
       { text: ">", color: "yellow" }
     );
     return this.tellraw("@a", showJSON);
   }
   async RunBack(backfile) {
-    console.log(`[${moment().format("HH:mm:ss")}]回档 备注:${backfile.filename}`);
+    console.log(`[${this.constructor.PluginName}][${moment().format("HH:mm:ss")}]回档 备注:${backfile.filename}`);
     this.schedule.cancel();
     this.schedule2.cancel();
     await this.CommandSender("stop");
     this.Core.EventBus.emit("disconnected");
     setTimeout(async () => {
-      console.log("清空World文件夹");
+      console.log(`[${this.constructor.PluginName}]清空World文件夹`);
       await fs.emptyDir(this.SaveSource);
-      console.log("释放存档");
+      console.log(`[${this.constructor.PluginName}]释放存档`);
       await runCommand(`tar zxvf ${backfile.path} -C ${this.SaveSource}`);
-      console.log("启动服务器");
+      console.log(`[${this.constructor.PluginName}]启动服务器`);
       await runCommand(this.RunServer);
-      console.log("完成");
+      console.log(`[${this.constructor.PluginName}]完成`);
       this.cancelAllPending();
       this.Core.reconnectRcon("QuickBackup");
     }, 3000);
   }
   async RunBackPd(backfile) {
-    console.log(`[${moment().format("HH:mm:ss")}]回档-仅玩家数据 备注:${backfile.filename}`);
-    console.log(`请求者信息:${JSON.stringify(this.backpdPending.requester)}`);
-    //this.schedule.cancel();
-    // this.schedule2.cancel();
-    await this.CommandSender("kick " + this.backpdPending.requester.name + " 请求回档");
-    await this.CommandSender("ban " + this.backpdPending.requester.name + " 请求回档");
-    // this.Core.EventBus.emit("disconnected");
+    console.log(`[${this.constructor.PluginName}][${moment().format("HH:mm:ss")}]回档-仅玩家数据 备注:${backfile.filename}`);
+    console.log(`[${this.constructor.PluginName}]请求者信息:${JSON.stringify(this.backpdPending.requester)}`);
+    await this.CommandSender("kick " + this.backpdPending.requester.name + " 正在准备回档");
+    await this.CommandSender("ban " + this.backpdPending.requester.name + " 正在回档");
     setTimeout(async () => {
-      console.log("释放存档");
-      //console.log(`${backfile.path}`)
-      //console.log(`${backfile.path}`, this.SaveSource + "/playerdata")
-      await fs.copy(
-        `${backfile.path}/${this.backpdPending.requester.uuid}.dat`,
-        `${this.SaveSource}/playerdata/${this.backpdPending.requester.uuid}.dat`
-      );
-      await fs.copy(
-        `${backfile.path}/${this.backpdPending.requester.uuid}.dat_old`,
-        `${this.SaveSource}/playerdata/${this.backpdPending.requester.uuid}.dat_old`
-      );
-      console.log("完成");
+      console.log(`[${this.constructor.PluginName}]释放存档[${backfile.path}]`);
+      let fileList = klawSync(backfile.path, {
+        traverseAll: true,
+        filter: a => {
+          return a.path.replace(this.backpdPending.requester.uuid, "") !== a.path;
+        },
+        nodir: true
+      }).map(a => a.path.replace(new RegExp(`^${backfile.path}/`), ""));
+      for (let file of fileList) {
+        await fs.copy(`${backfile.path}/${file}`, `${this.SaveSource}/${file}`).catch(e => console.error(e));
+      }
+      console.log(`[${this.constructor.PluginName}]完成`);
       await this.CommandSender("pardon " + this.backpdPending.requester.name);
       this.cancelAllPending();
-      // this.Core.reconnectRcon("QuickBackup");
     }, 3000);
   }
   async deleteSave(backfile) {
-    console.log(`[${moment().format("HH:mm:ss")}]删除存档 备注:${backfile.filename}`);
+    console.log(`[${this.constructor.PluginName}][${moment().format("HH:mm:ss")}]删除存档 备注:${backfile.filename}`);
     this.tellraw("@a", [
       { text: "[备份系统]", color: "green", bold: true },
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
@@ -542,7 +535,7 @@ class QuickBackup extends BasePlugin {
   }
   async RunBackup(comment) {
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
-    console.log(`[${moment().format("HH:mm:ss")}]运行备份 备注:${comment}`);
+    console.log(`[${this.constructor.PluginName}][${moment().format("HH:mm:ss")}]运行备份 备注:${comment}`);
     let FileName = `${comment}.tar.gz`;
     let Path = `/tmp/Minecraft/${FileName}`;
     await this.tellraw(`@a`, [
@@ -604,18 +597,22 @@ class QuickBackup extends BasePlugin {
   }
   async RunBackupPlayerData(comment) {
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
-    console.log(`[${moment().format("HH:mm:ss")}]运行玩家数据 备注:${comment}`);
+    console.log(`[${this.constructor.PluginName}][${moment().format("HH:mm:ss")}]运行玩家数据备份 备注:${comment}`);
     let FileName = `${comment}`;
-    let ServerFile = klawSync(this.PlayerDataDest, { nofile: true }).sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
-    //console.log(ServerFile)
+    let ServerFile = klawSync(this.PlayerDataDest, { nofile: true, depthLimit: 1 }).sort(
+      (a, b) => b.stats.mtimeMs - a.stats.mtimeMs
+    );
     for (let File of ServerFile.slice(60)) {
       if (new Date().getTime() - File.stats.mtimeMs > 3600000) {
         await fs.remove(File.path);
       }
     }
-    await fs.ensureDir(`${this.PlayerDataDest}/${FileName}`);
-    await fs.copy(this.SaveSource + "/playerdata", `${this.PlayerDataDest}/${FileName}`);
-    console.log("完成玩家数据备份");
+    await fs.ensureDir(`${this.PlayerDataDest}/${FileName}/`);
+    for (let sourcename of [`playerdata`, `advancements`, `stats`]) {
+      await fs.ensureDir(`${this.PlayerDataDest}/${FileName}/${sourcename}/`).catch(e=>console.error(e));
+      await fs.copy(`${this.SaveSource}/${sourcename}/`, `${this.PlayerDataDest}/${FileName}/${sourcename}/`).catch(e=>console.error(e));
+    }
+    console.log(`[${this.constructor.PluginName}][${moment().format("HH:mm:ss")}]完成玩家数据备份`);
   }
   Start() {
     this.schedule = schedule.scheduleJob("0 0,30 * * * *", async () => {

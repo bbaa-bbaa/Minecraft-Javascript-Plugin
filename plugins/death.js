@@ -5,7 +5,6 @@ class DeathCount extends BasePlugin {
     super(...arguments);
   }
   init(Plugin) {
-  //  Plugin.registerNativeLogProcesser(/\w+ is bleeding.../, this.addCount);
   }
   async Start() {
     await this.Scoreboard.ensureScoreboard({ name: "Death", type: "deathCount", displayname: "死亡次数" });

@@ -1,4 +1,4 @@
-let BasePlugin = require(__dirname+"/../basePlugin.js")
+const BasePlugin = require(__dirname+"/../basePlugin.js")
 class simpleCommand extends BasePlugin {
   static PluginName = "简单命令"
   constructor(){
@@ -23,7 +23,7 @@ class simpleCommand extends BasePlugin {
     let Args = tmp;
     Player = Player.replace(/§\w/g,"")
     if(this.CommandList[Cmd]){
-      console.log(`玩家 ${Player} 执行 ${Cmd} ${Args.join(" ")}`)
+      console.log(`[${this.constructor.PluginName}]玩家 ${Player} 执行 ${Cmd} ${Args.join(" ")}`)
       this.CommandList[Cmd](Player,...Args)
     }
   }
