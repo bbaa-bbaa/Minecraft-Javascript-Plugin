@@ -1,6 +1,6 @@
 let BasePlugin = require("../core/basePlugin.js");
 class DeathCount extends BasePlugin {
-  static PluginName = "倒地榜";
+  static PluginName = "死亡榜";
   constructor() {
     super(...arguments);
   }
