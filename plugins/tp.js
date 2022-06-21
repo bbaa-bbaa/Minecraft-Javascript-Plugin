@@ -1,6 +1,6 @@
 let BasePlugin = require("../core/basePlugin.js");
 class TelePort extends BasePlugin {
-  static PluginName = "TelePort";
+  static PluginName = "玩家传送";
   constructor() {
     super(...arguments);
   }
@@ -59,7 +59,7 @@ class TelePort extends BasePlugin {
             ]).catch(() => {});
             return;
           }
-          console.log(`[${this.constructor.PluginName}]执行 ` + `tp ${Player} ${Target}`);
+          this.PluginLog(`执行 ` + `tp ${Player} ${Target}`);
           this.tellraw(`${Player}`, [
             { text: `2秒后TP到${Target}`, color: "green", bold: true },
           ]).catch(() => {});

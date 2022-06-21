@@ -8,6 +8,9 @@ class BasePlugin {
     const hash = crypto.createHash("sha1");
     this.Scoreboard_Prefix = hash.update(this.constructor.name).digest("hex");
   }
+  PluginLog(t) {
+    console.log(`[${this.constructor.PluginName}]` + t);
+  }
   ConvertUUID(_IntArray) {
     const arr = new ArrayBuffer(16);
     const view = new DataView(arr);
@@ -20,7 +23,9 @@ class BasePlugin {
     if (uuidCache[Player]) return uuidCache[Player];
     if (this.newVersion) {
       uuidCache[Player] = this.ConvertUUID(
-        await this.CommandSender(this.newVersion ? `data get entity @e[type="minecraft:player",limit=1,name="${Player}"] UUID` : "; 0,0,0,0")
+        await this.CommandSender(
+          this.newVersion ? `data get entity @e[type="minecraft:player",limit=1,name="${Player}"] UUID` : "; 0,0,0,0"
+        )
           .then(a => {
             return a
               .split(";")[1]
@@ -88,6 +93,7 @@ class BasePlugin {
       }
     }
     for (let msg of newJson) {
+      msg.unshift({ text: `[${this.constructor.PluginName}]`, color: "green", bold: true })
       await this.CommandSender(startWith + JSON.stringify(msg));
     }
   }
@@ -97,8 +103,8 @@ class BasePlugin {
     for (let [Player, ScoreList] of Object.entries(Score)) {
       NewScore[Player] = {};
       for (let [ScoreName, Score] of Object.entries(ScoreList)) {
-        if (ScoreName.substr(0, 4) == this.Scoreboard_Prefix.substr(0, 4)) {
-          NewScore[Player][ScoreName.substr(5)] = Score;
+        if (ScoreName.substring(0, 4) == this.Scoreboard_Prefix.substr(0, 4)) {
+          NewScore[Player][ScoreName.substring(5)] = Score;
         }
       }
     }

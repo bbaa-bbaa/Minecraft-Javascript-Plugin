@@ -72,7 +72,7 @@ class Scoreboard extends BasePlugin {
           return this.updateScore();
         })
         .then(() => {
-          console.log(`[${this.constructor.PluginName}]同步完成`);
+          this.PluginLog(`同步完成`);
           this.Synced();
         });
     }
@@ -95,10 +95,10 @@ class Scoreboard extends BasePlugin {
         }
       });
     } else {
-      console.log(`[${this.constructor.PluginName}]新版MC记分板备用同步方案,记录的记分板列表如下`);
+      this.PluginLog(`新版MC记分板备用同步方案,记录的记分板列表如下`);
       const ScoreList = Object.keys(this.BoardList);
       console.log(ScoreList);
-      console.log(`[${this.constructor.PluginName}]获取被跟踪的实体列表`);
+      this.PluginLog(`获取被跟踪的实体列表`);
       return this.CommandSender("scoreboard players list").then(async a => {
         if (!/There are \d tracked entities:\s?(.*)/.test(a)) return Promise.resolve();
         let players = a
@@ -108,13 +108,13 @@ class Scoreboard extends BasePlugin {
         for (let i of players) {
           this.Scores[i] = {};
           for (let s of ScoreList) {
-            console.log(`[${this.constructor.PluginName}]正在获取玩家:${i} 的 ${s} 记分项`);
+            this.PluginLog(`正在获取玩家:${i} 的 ${s} 记分项`);
             await this.CommandSender(`scoreboard players get ${i} ${s}`).then(c => {
               if (!/^.*? has (\d+)/.test(c)) return Promise.resolve();
               let score = Number(c.match(/^.*? has (\d+)/)[1]);
               if (!isNaN(score)) {
                 this.Scores[i][s] = score;
-                console.log(`[${this.constructor.PluginName}]玩家:${i} 的 ${s} 记分项值为:${score}`);
+                this.PluginLog(`玩家:${i} 的 ${s} 记分项值为:${score}`);
               }
             });
           }

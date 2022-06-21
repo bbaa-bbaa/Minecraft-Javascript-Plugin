@@ -41,37 +41,40 @@ function parseText(Text) {
   return Formatted;
 }
 class ChangeColor extends BasePlugin {
-  static PluginName = "修改颜色";
+  static PluginName = "修改物品名称";
   constructor() {
     super(...arguments);
   }
   init(Plugin) {
-    if(!this.newVersion) {
-      return console.log(`[${this.constructor.PluginName}]颜色代码不支持旧版本Minecraft，跳过加载`)
+    if (!this.newVersion) {
+      this.PluginLog(`旧模式`)
+      Plugin.registerCommand("changecolor", this.colorNew.bind(this));
+      return this.PluginLog(`颜色代码不支持旧版本Minecraft，跳过加载`);
+    } else {
+      this.PluginLog(`新版本模式`)
+      Plugin.registerCommand("changecolor", this.colorNew.bind(this));
     }
-    Plugin.registerCommand("changecolor", this.color.bind(this));
   }
-  async color(Player, ...args) {
+  async colorOld(Player,...args){
+    let uuid = await this.getUUID(Player);
+    await this.CommandSender(`save-all`);
+    let buf = await fs.promises
+      .readFile(`${this.Core.BaseDir}/world/playerdata/${uuid}.dat`)
+      .catch(() => Buffer.allocUnsafe(0));
+    if (!buf.byteLength) return;
+    buf = Buffer.from(pako.inflate(buf));
+    let nbtFileReader = nbttool.decode(buf).value;
+    const SelectedItemSlot = Number(nbtFileReader.SelectedItemSlot);
+    basenbt = nbtFileReader.Inventory.find(a => Number(a.Slot) == SelectedItemSlot);
+    return;
+  }
+  async colorNew(Player, ...args) {
     args = args.join(" ");
     let basenbt;
-    if (this.newVersion) {
-      const rawNbt = await this.CommandSender(
-        `data get entity @e[type="minecraft:player",limit=1,name="${Player}"] SelectedItem`
-      );
-      basenbt = nbttool.parse(rawNbt.substring(rawNbt.indexOf(":") + 1).trim());
-    } else {
-      let uuid = await this.getUUID(Player);
-      await this.CommandSender(`save-all`);
-      let buf = await fs.promises
-        .readFile(`${this.Core.BaseDir}/world/playerdata/${uuid}.dat`)
-        .catch(() => Buffer.allocUnsafe(0));
-      if (!buf.byteLength) return;
-      buf = Buffer.from(pako.inflate(buf));
-      let nbtFileReader = nbttool.decode(buf).value;
-      const SelectedItemSlot = Number(nbtFileReader.SelectedItemSlot);
-      basenbt = nbtFileReader.Inventory.find(a => Number(a.Slot) == SelectedItemSlot);
-      return;
-    }
+    const rawNbt = await this.CommandSender(
+      `data get entity @e[type="minecraft:player",limit=1,name="${Player}"] SelectedItem`
+    );
+    basenbt = nbttool.parse(rawNbt.substring(rawNbt.indexOf(":") + 1).trim());
     let Tag = basenbt.tag;
     let FormatArray = [];
     try {
@@ -84,15 +87,11 @@ class ChangeColor extends BasePlugin {
       return this.tellraw(Player, [{ text: "不规范的参数", color: "red" }]);
     }
     this.tellraw(Player, [{ text: "正在修改你主手上的物品名称为", color: "red" }, ...FormatArray]);
-    if (this.newVersion) {
-      return this.CommandSender(
-        `item replace entity @e[type="minecraft:player",limit=1,name="${Player}"] weapon.mainhand with ${
-          basenbt.id
-        }${nbttool.stringify(Tag)} ${Number(basenbt.Count)}`
-      );
-    } else {
-      return this.CommandSender(`replaceitem`);
-    }
+    return this.CommandSender(
+      `item replace entity @e[type="minecraft:player",limit=1,name="${Player}"] weapon.mainhand with ${
+        basenbt.id
+      }${nbttool.stringify(Tag)} ${Number(basenbt.Count)}`
+    );
   }
   async Start() {}
 }

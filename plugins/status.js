@@ -37,7 +37,7 @@ for (let [name, value] of Object.entries(_WorldMapping)) {
   WorldMapping[name.toUpperCase()] = value;
 }
 class Status extends BasePlugin {
-  static PluginName = "监控";
+  static PluginName = "监控系统";
   constructor() {
     super(...arguments);
     this.Info = { cpu: {}, network: {} };
@@ -69,7 +69,6 @@ class Status extends BasePlugin {
     if (force) {
       let Mem = await si.mem();
       this.tellraw(`@a`, [
-        { text: "[监控系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
         ...this.Info.cpu.map((cpu, idx) => {
           return [
@@ -79,7 +78,6 @@ class Status extends BasePlugin {
         })
       ]);
       this.tellraw(`@a`, [
-        { text: "[监控系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
         ...os.loadavg().map((la, idx) => {
           la = la.toFixed(2);
@@ -98,7 +96,6 @@ class Status extends BasePlugin {
         })
       ]);
       this.tellraw(`@a`, [
-        { text: "[监控系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
         { text: `物理内存使用:`, color: "aqua" },
         {
@@ -107,7 +104,6 @@ class Status extends BasePlugin {
         }
       ]);
       this.tellraw(`@a`, [
-        { text: "[监控系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
         { text: `虚拟内存使用:`, color: "aqua" },
         {
@@ -116,7 +112,6 @@ class Status extends BasePlugin {
         }
       ]);
       this.tellraw(`@a`, [
-        { text: "[监控系统]", color: "green", bold: true },
         { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
         { text: `网络:  `, color: "aqua" },
         { text: `${(this.Info.network.rx / 1024).toFixed(2)}KB/s↓   `, color: "green" },
@@ -143,11 +138,10 @@ class Status extends BasePlugin {
               this.MSPTDiffCount += Math.round(MSPTDiff / 5);
             }
             if (Math.abs(MSPTDiff) > 5) {
-              console.log(`[${this.constructor.PluginName}]负载异动:${this.MSPTDiffCount} MSPT:${MSPT}`);
+              this.PluginLog(`负载异动:${this.MSPTDiffCount} MSPT:${MSPT}`);
             }
             if (this.MSPTDiffCount >= 6) {
               this.tellraw(`@a`, [
-                { text: "[监控系统]", color: "yellow", bold: true },
                 { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
                 {
                   text: `检测到服务器负载增加`,
@@ -158,7 +152,6 @@ class Status extends BasePlugin {
               this.MSPTDiffCount = 0;
             } else if (this.MSPTDiffCount <= -6) {
               this.tellraw(`@a`, [
-                { text: "[监控系统]", color: "green", bold: true },
                 { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
                 {
                   text: `检测到服务器负载减少`,
@@ -174,7 +167,6 @@ class Status extends BasePlugin {
           if (MSPT < 0.5) continue;
           let Color = TPS == 20 ? "green" : TPS > 15 ? "yellow" : "red";
           this.tellraw(`@a`, [
-            { text: "[监控系统]", color: "green", bold: true },
             { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
             { text: `世界:`, color: "aqua" },
             { text: WorldMapping[World.toUpperCase()] || World, color: "green", bold: true },

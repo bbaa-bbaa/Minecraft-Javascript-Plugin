@@ -12,7 +12,7 @@ class simpleCommand extends BasePlugin {
   registerCommand(cmd,func,scope){
     if(this.CommandList[cmd]) return;
     this.CommandList[cmd]=func.bind(scope);
-    console.log(`[${this.constructor.PluginName}]${scope.constructor.PluginName}注册了一个命令${cmd}`)
+    this.PluginLog(`${scope.constructor.PluginName}注册了一个命令${cmd}`)
   }
   ProcessCommand(RawText){
     let [Other, Player, Commmand] = /.*?\]:.*?\<(.*?)\>.*?!!(.*)/.exec(
@@ -23,7 +23,7 @@ class simpleCommand extends BasePlugin {
     let Args = tmp;
     Player = Player.replace(/§\w/g,"")
     if(this.CommandList[Cmd]){
-      console.log(`[${this.constructor.PluginName}]玩家 ${Player} 执行 ${Cmd} ${Args.join(" ")}`)
+      this.PluginLog(`玩家 ${Player} 执行 ${Cmd} ${Args.join(" ")}`)
       this.CommandList[Cmd](Player,...Args)
     }
   }
