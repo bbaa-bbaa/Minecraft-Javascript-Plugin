@@ -1,6 +1,6 @@
 let BasePlugin = require("../core/basePlugin.js");
-class TelePort extends BasePlugin {
-  static PluginName = "玩家传送";
+class TelePortCommand extends BasePlugin {
+  static PluginName = "玩家传送命令";
   constructor() {
     super(...arguments);
   }
@@ -67,13 +67,7 @@ class TelePort extends BasePlugin {
             { text: `2秒后${Player} TP到你`, color: "green", bold: true },
           ]).catch(() => {});
           setTimeout(() => {
-            if (this.newVersion) {
-              this.CommandSender(
-                `tp @e[type="minecraft:player",limit=1,name="${Player}"] @e[type="minecraft:player",limit=1,name="${Target}"]`
-              ).catch(() => {});
-            } else {
-              this.CommandSender(`tp ${Player} ${Target}`).catch(() => {});
-            }
+            this.Teleport(Player,Target)
           }, 2000);
         } else {
           this.tellraw(`${Player}`, [
@@ -92,4 +86,4 @@ class TelePort extends BasePlugin {
     await this.Scoreboard.displayScoreboard("Health", "list");
   }
 }
-module.exports = TelePort;
+module.exports = TelePortCommand;

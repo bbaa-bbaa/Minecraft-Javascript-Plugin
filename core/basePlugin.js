@@ -11,6 +11,18 @@ class BasePlugin {
   PluginLog(t) {
     console.log(`[${this.constructor.PluginName}]` + t);
   }
+  getWorldName(a) {
+    if (typeof Number(a) == "number" && !isNaN(Number(a))) {
+      a = this.Core.WorldMapping.id[a];
+    }
+    if (this.Core.WorldMapping.disName[a.toUpperCase()]) {
+      return this.Core.WorldMapping.disName[a.toUpperCase()];
+    }
+    return a;
+  }
+  Teleport(Source, Target) {
+    return this.Core.Teleport(Source, Target);
+  }
   ConvertUUID(_IntArray) {
     const arr = new ArrayBuffer(16);
     const view = new DataView(arr);
@@ -93,7 +105,7 @@ class BasePlugin {
       }
     }
     for (let msg of newJson) {
-      msg.unshift({ text: `[${this.constructor.PluginName}]`, color: "green", bold: true })
+      msg.unshift({ text: `[${this.constructor.PluginName}]`, color: "green", bold: true });
       await this.CommandSender(startWith + JSON.stringify(msg));
     }
   }

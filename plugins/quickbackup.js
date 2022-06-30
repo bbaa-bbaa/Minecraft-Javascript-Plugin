@@ -497,12 +497,12 @@ class QuickBackup extends BasePlugin {
     this.PluginLog(`[${moment().format("HH:mm:ss")}]删除存档 备注:${backfile.filename}`);
     this.tellraw("@a", [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
-      { text: `删除中\n`, color: "red", bold: false }
+      { text: `删除中`, color: "red", bold: false }
     ]);
     await fs.unlink(backfile.path);
     this.tellraw("@a", [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
-      { text: `删除完成\n`, color: "red", bold: false }
+      { text: `删除完成`, color: "red", bold: false }
     ]);
     this.cancelAllPending();
   }
