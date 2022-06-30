@@ -18,8 +18,15 @@ class Teleport extends BasePlugin {
       if (this.Core.Players.indexOf(Target) > -1) {
         Target = await this.getPlayerPosition(Target);
       }
-      this.PluginLog(`执行命令：forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`)
-      return this.CommandSender(`forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+      this.PluginLog(`执行命令：forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+      return this.CommandSender(`forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).then(
+        changedim => {
+          if (/is already in the dimension specified/.test(changedim)) {
+            this.PluginLog(`执行命令：tp ${this.SelectorWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+            return this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+          }
+        }
+      );
     }
   }
   PlayerWarpper(Player) {
@@ -29,9 +36,9 @@ class Teleport extends BasePlugin {
       return Player;
     }
   }
-  PositionWarpper(Position) {
+  PositionWarpper(Position, ignoreDim = false) {
     if (typeof Position == "object" && "dim" in Position) {
-      if (this.MultiWorld) {
+      if (this.MultiWorld && !ignoreDim) {
         return `${Position.dim} ${Position.pos.join(" ")}`;
       } else {
         return `${Position.pos.join(" ")}`;
@@ -57,10 +64,10 @@ class Teleport extends BasePlugin {
     let pos, dim;
     if (!this.newVersion) {
       await this.CommandSender(
-        `execute ${Player} ~ ~ ~ summon minecraft:armor_stand ~ ~ ~ {CustomName:"setHomePlugin_${Player}",Invulnerable:1b,NoGravity:1b,Invisible:true}`
+        `execute ${Player} ~ ~ ~ summon minecraft:armor_stand ~ ~ ~ {CustomName:"TeleportProber_${Player}",Invulnerable:1b,NoGravity:1b,Invisible:true}`
       );
-      const entityData = await this.CommandSender(`entitydata @e[name=setHomePlugin_${Player}] {}`);
-      await this.CommandSender(`kill @e[name=setHomePlugin_${Player}]`);
+      const entityData = await this.CommandSender(`entitydata @e[name=TeleportProber_${Player}] {}`);
+      await this.CommandSender(`kill @e[name=TeleportProber_${Player}]`);
       let Nbt = nbttool.parse(entityData.substring(entityData.indexOf(":") + 1).trim());
       pos = Nbt.Pos.map(b => b.toFixed(2));
       dim = Number(Nbt.Dimension);
