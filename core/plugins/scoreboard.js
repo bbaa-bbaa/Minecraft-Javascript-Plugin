@@ -16,7 +16,7 @@ class Scoreboard extends BasePlugin {
       this.updateScore().then(() => {
         this.Synced();
       });
-    }, 5000);
+    }, 1000);
     this.Core.Scoreboard = {
       ensureScoreboard: async (options, scope) => {
         if (!this.newVersion) await this.waitForSync;
@@ -25,8 +25,8 @@ class Scoreboard extends BasePlugin {
         }
         options.name = this.getRealname(options.name, scope);
         if (!this.BoardList[options.name]) {
-          console.log(
-            `[${this.constructor.PluginName}]${scope.constructor.PluginName} 注册了一个名为 ${options.displayname} 的 ${options.type} 记分板`
+          this.PluginLog(
+            `${scope.constructor.PluginName} 注册了一个名为 ${options.displayname} 的 ${options.type} 记分板`
           );
           return this.CommandSender(
             `scoreboard objectives add ${options.name} ${options.type} ${
@@ -57,7 +57,7 @@ class Scoreboard extends BasePlugin {
   }
   getRealname(name, scope) {
     const hash = crypto.createHash("sha1");
-    return hash.update(scope.constructor.name).digest("hex").substr(0, 4) + "_" + name;
+    return hash.update(scope.constructor.name).digest("hex").substring(0, 4) + "_" + name;
   }
   Start() {
     if (!this.newVersion) {

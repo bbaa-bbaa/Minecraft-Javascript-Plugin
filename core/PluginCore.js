@@ -41,6 +41,8 @@ class PluginCore {
     this.registerPlugin(require(__dirname + "/plugins/simpleCommand.js"));
     this.registerPlugin(require(__dirname + "/plugins/players.js"));
     this.registerPlugin(require(__dirname + "/plugins/scoreboard.js"));
+    this.registerPlugin(require(__dirname + "/plugins/WorldMapping.js"));
+    this.registerPlugin(require(__dirname + "/plugins/Teleport.js"));
   }
   registerPlugin(Constructor) {
     let PluginClass = Constructor;

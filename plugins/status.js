@@ -3,39 +3,6 @@ const si = require("systeminformation");
 const cpu = require("cpu");
 const moment = require("moment");
 const os = require("os");
-let _WorldMapping = {
-  overworld: "主世界",
-  Overall: "所有",
-  vox_ponds: "未知",
-  the_nether: "地狱",
-  candyland: "糖果",
-  deeplands: "深层",
-  mysterium: "秘境",
-  immortallis: "不朽",
-  barathos: "爵士",
-  lborean: "暴风",
-  ancient_cavern: "远古神殿",
-  the_end: "末地",
-  runandor: "符境",
-  crystevia: "晶体",
-  gardencia: "花园",
-  celeve: "玩具",
-  lelyetia: "赫尔维蒂",
-  precasia: "传说",
-  iromine: "黄金",
-  greckon: "格瑞克",
-  creeponia: "蠕变",
-  dustopia: "异位",
-  shyrelands: "塞尔瑞",
-  lunalus: "月球",
-  haven: "天堂",
-  abyss: "深渊",
-  nether: "地狱"
-};
-let WorldMapping = {};
-for (let [name, value] of Object.entries(_WorldMapping)) {
-  WorldMapping[name.toUpperCase()] = value;
-}
 class Status extends BasePlugin {
   static PluginName = "监控系统";
   constructor() {
@@ -169,7 +136,7 @@ class Status extends BasePlugin {
           this.tellraw(`@a`, [
             { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
             { text: `世界:`, color: "aqua" },
-            { text: WorldMapping[World.toUpperCase()] || World, color: "green", bold: true },
+            { text: this.getWorldName(World), color: "green", bold: true },
             { text: ` TPS:`, color: "aqua" },
             { text: TPS, color: Color },
             { text: ` MSPT:`, color: "aqua" },

@@ -56,6 +56,7 @@ class ChangeColor extends BasePlugin {
     }
   }
   async colorOld(Player,...args){
+    args = args.join(" ");
     let uuid = await this.getUUID(Player);
     await this.CommandSender(`save-all`);
     let buf = await fs.promises
@@ -66,6 +67,7 @@ class ChangeColor extends BasePlugin {
     let nbtFileReader = nbttool.decode(buf).value;
     const SelectedItemSlot = Number(nbtFileReader.SelectedItemSlot);
     basenbt = nbtFileReader.Inventory.find(a => Number(a.Slot) == SelectedItemSlot);
+    let Tag = basenbt.tag;
     return;
   }
   async colorNew(Player, ...args) {
