@@ -510,34 +510,34 @@ class QuickBackup extends BasePlugin {
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
     this.PluginLog(`[${moment().format("HH:mm:ss")}]运行备份 备注:${comment}`);
     let FileName = `${comment}.tar.gz`;
-    let Path = `/tmp/Minecraft/${FileName}`;
+    let Path = `/data/mcBackup/tmp/Minecraft/${FileName}`;
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "服务器正在备份...", color: "yellow" }
     ]);
-    await this.tellraw(`@a`, [
+   /* await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "正在保存存档 ", color: "yellow" },
       { text: "请勿快速移动", color: "red" }
     ]);
-    await this.CommandSender("save-all");
+    //await this.CommandSender("save-all");
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "存档保存成功", color: "green" }
-    ]);
+    ]);*/
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "正在打包存档", color: "yellow" }
     ]);
-    await fs.ensureDir("/tmp/Minecraft/world");
-    let CleanList = fs.readdirSync("/tmp/Minecraft").filter(a => /tar\.gz/.test(a));
+    await fs.ensureDir("/data/mcBackup/tmp/Minecraft/world");
+    let CleanList = fs.readdirSync("/data/mcBackup/tmp/Minecraft").filter(a => /tar\.gz/.test(a));
     for (let Item of CleanList) {
-      await fs.promises.unlink("/tmp/Minecraft/" + Item);
+      await fs.promises.unlink("/data/mcBackup/tmp/Minecraft/" + Item);
     }
-    await fs.emptyDir("/tmp/Minecraft/world");
-    await fs.copy(this.SaveSource, "/tmp/Minecraft/world");
-    let a = await runCommand(`tar -cvzf ../${FileName} *`, { cwd: "/tmp/Minecraft/world" });
-    await fs.emptyDir("/tmp/Minecraft/world");
+    await fs.emptyDir("/data/mcBackup/tmp/Minecraft/world");
+    await fs.copy(this.SaveSource, "/data/mcBackup/tmp/Minecraft/world");
+    let a = await runCommand(`tar -cvzf ../${FileName} *`, { cwd: "/data/mcBackup/tmp/Minecraft/world" });
+    await fs.emptyDir("/data/mcBackup/tmp/Minecraft/world");
     let Stat = fs.statSync(Path);
     let Size = Stat.size / 1048576;
     await this.tellraw(`@a`, [
@@ -582,7 +582,7 @@ class QuickBackup extends BasePlugin {
     this.PluginLog(`[${moment().format("HH:mm:ss")}]完成玩家数据备份`);
   }
   Start() {
-    this.schedule = schedule.scheduleJob("0 0,30 * * * *", async () => {
+    this.schedule = schedule.scheduleJob("0 0 * * * *", async () => {
       if (this.Core.Players.length) {
         let ServerFile = klawSync(this.wholeWorldDest, {
           nodir: true
