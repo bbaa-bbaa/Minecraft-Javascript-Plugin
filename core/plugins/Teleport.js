@@ -1,5 +1,8 @@
 let BasePlugin = require(__dirname + "/../basePlugin.js");
 const nbttool = require("nbt-ts");
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 class Teleport extends BasePlugin {
   static PluginName = "传送内核插件";
   constructor() {
@@ -12,21 +15,11 @@ class Teleport extends BasePlugin {
     };
   }
   async Teleport(Source, Target) {
-    if (!this.MultiWorld) {
+    if (!this.MultiWorld||true) {
       this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
     } else {
-      if (this.Core.Players.indexOf(Target) > -1) {
-        Target = await this.getPlayerPosition(Target);
-      }
-      this.PluginLog(`执行命令：forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
-      return this.CommandSender(`forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).then(
-        changedim => {
-          if (/is already in the dimension specified/.test(changedim)) {
-            this.PluginLog(`执行命令：tp ${this.SelectorWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
-            return this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
-          }
-        }
-      );
+      this.PluginLog("执行命令:"+`execute ${this.SelectorWarpper(Source)} ~ ~ ~ tpx ${this.SelectorWarpper(Target)}`)
+      await this.CommandSender(`execute ${this.SelectorWarpper(Source)} ~ ~ ~ tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
     }
   }
   PlayerWarpper(Player) {
@@ -39,7 +32,7 @@ class Teleport extends BasePlugin {
   PositionWarpper(Position, ignoreDim = false) {
     if (typeof Position == "object" && "dim" in Position) {
       if (this.MultiWorld && !ignoreDim) {
-        return `${Position.dim} ${Position.pos.join(" ")}`;
+        return `${Position.pos.join(" ")} ${Position.dim}`;
       } else {
         return `${Position.pos.join(" ")}`;
       }
