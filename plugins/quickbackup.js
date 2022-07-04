@@ -582,7 +582,7 @@ class QuickBackup extends BasePlugin {
     this.PluginLog(`[${moment().format("HH:mm:ss")}]完成玩家数据备份`);
   }
   Start() {
-    this.schedule = schedule.scheduleJob("0 0 * * * *", async () => {
+    this.schedule = schedule.scheduleJob("0 30 * * * *", async () => {
       if (this.Core.Players.length) {
         let ServerFile = klawSync(this.wholeWorldDest, {
           nodir: true

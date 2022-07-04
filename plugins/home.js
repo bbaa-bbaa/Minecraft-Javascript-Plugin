@@ -49,7 +49,9 @@ class Home extends BasePlugin {
       { text: `维度[${this.getWorldName(dim)}]的[${pos.join(", ")}]`, color: "green" },
       { text: `设置家 ${homename}`, color: "yellow" }
     ]);
-
+    if(!HomeData[Player]){
+      HomeData[Player]={};
+    }
     HomeData[Player][homename] = { pos, dim };
     writeHomeData();
   }

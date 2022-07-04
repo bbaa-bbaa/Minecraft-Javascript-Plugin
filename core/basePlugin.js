@@ -63,7 +63,7 @@ class BasePlugin {
     return uuidCache[Player];
   }
   async CommandSender() {
-    this.PluginLog(`[${new Date().getTime()}]执行命令:`+arguments[0])
+    // this.PluginLog(`[${new Date().getTime()}]执行命令:`+arguments[0])
     return this.Core.RconClient.send(...arguments).catch(this.Core.ErrorHandle.bind(this.Core));
   }
   async tellraw(Dest, Json) {
