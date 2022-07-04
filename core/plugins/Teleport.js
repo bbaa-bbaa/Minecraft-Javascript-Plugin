@@ -16,7 +16,12 @@ class Teleport extends BasePlugin {
   }
   async Teleport(Source, Target) {
     if (!this.MultiWorld||true) {
-      this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
+      if (this.Core.Players.indexOf(Target) > -1) {
+          this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
+      } else {
+        this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
+      }
+      
     } else {
       this.PluginLog("执行命令:"+`execute ${this.SelectorWarpper(Source)} ~ ~ ~ tpx ${this.SelectorWarpper(Target)}`)
       await this.CommandSender(`execute ${this.SelectorWarpper(Source)} ~ ~ ~ tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
@@ -32,7 +37,7 @@ class Teleport extends BasePlugin {
   PositionWarpper(Position, ignoreDim = false) {
     if (typeof Position == "object" && "dim" in Position) {
       if (this.MultiWorld && !ignoreDim) {
-        return `${Position.pos.join(" ")} ${Position.dim}`;
+        return `${Position.pos.join(" ")}`;
       } else {
         return `${Position.pos.join(" ")}`;
       }
