@@ -4,6 +4,7 @@ const cp = require("child_process");
 const moment = require("moment");
 const EventEmitter = require("events");
 const LogFileReader = require(__dirname + "/LogFileReader");
+const CommandSender = require(__dirname + "/CommandSender")
 const util = require("util");
 const runCommand = util.promisify(cp.exec);
 class PluginCore {
@@ -29,6 +30,7 @@ class PluginCore {
       this.Disconnected();
     });
     this.EventBus.on("connected", this.Connected.bind(this));
+    this.CommandSender = new CommandSender(this,this.RconClient);
   }
   crashDetect() {
     fs.ensureDir(this.BaseDir + "/crash-reports/").then(() => {
@@ -115,6 +117,9 @@ class PluginCore {
     }
     if (this.LogFileReader.close) {
       this.LogFileReader.close();
+    }
+    if(this.CommandSender&&this.CommandSender.cancelAll){
+      this.CommandSender.cancelAll();
     }
   }
   async ErrorHandle(a) {

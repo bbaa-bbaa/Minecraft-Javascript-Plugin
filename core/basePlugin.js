@@ -62,9 +62,9 @@ class BasePlugin {
     }
     return uuidCache[Player];
   }
-  async CommandSender() {
+  async CommandSender(cmd) {
     // this.PluginLog(`[${new Date().getTime()}]执行命令:`+arguments[0])
-    return this.Core.RconClient.send(...arguments).catch(this.Core.ErrorHandle.bind(this.Core));
+    return this.Core.CommandSender.requestCommand(cmd);
   }
   async tellraw(Dest, Json) {
     if (this.newVersion && !/@/.test(Dest)) {
