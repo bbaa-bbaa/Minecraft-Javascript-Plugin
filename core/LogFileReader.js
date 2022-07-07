@@ -12,7 +12,13 @@ class LogFileReader {
     this.watchLogfile();
   }
   async readPartFile() {
-    const curr = { size: (await fs.promises.stat(this.path).catch(a=>{return {size:0}})).size };
+    const curr = {
+      size: (
+        await fs.promises.stat(this.path).catch(a => {
+          return { size: 0 };
+        })
+      ).size
+    };
     let diff = curr.size - this.Pos;
     console.log(`[PluginsCore:LogFileReader]读取日志文件${diff}:${this.Pos}->${curr.size}`);
     if (diff < 0) {
@@ -21,10 +27,10 @@ class LogFileReader {
       this.Pos = 0;
       diff = curr.size - this.Pos;
       return;
-    } else if(!diff) {
-      return
+    } else if (!diff) {
+      return;
     }
-    let buf=Buffer.alloc(diff)
+    let buf = Buffer.alloc(diff);
     this.Handle.read(buf, 0, diff, this.Pos)
       .then(() => {
         this.Pos = curr.size;
@@ -53,7 +59,11 @@ class LogFileReader {
   async openLogFile(r = "WatcherInit") {
     try {
       this.Handle = await fs.promises.open(this.path, "r");
-      this.Pos = (await fs.promises.stat(this.path).catch(a=>{return {size:0}})).size;
+      this.Pos = (
+        await fs.promises.stat(this.path).catch(a => {
+          return { size: 0 };
+        })
+      ).size;
       console.log(`[${r}]打开日志 位移` + this.Pos);
     } catch (e) {
       console.error(e);
@@ -62,7 +72,7 @@ class LogFileReader {
   }
   async closeLogFile() {
     console.log("[PluginsCore:LogFileReader]关闭日志文件");
-    return this.Handle.close().catch(a=>Promise.resolve());
+    return this.Handle.close().catch(a => Promise.resolve());
   }
   async close() {
     console.log("[PluginsCore:LogFileReader]关闭日志Watcher");

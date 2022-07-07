@@ -1,4 +1,4 @@
-let delay = 100;
+let delay = 0;
 class CommanderTask {
   constructor(command, resolve, reject, strict) {
     this.Command = command;
@@ -6,24 +6,43 @@ class CommanderTask {
     this._reject = reject;
     this.strict = strict;
   }
-  get resolve() {
-    return this._resolve;
+  id = 0;
+  resolve(r) {
+    this._resolve(r);
+    return this._internalResolve(r);
   }
-  get reject() {
-    return this._reject;
+  reject(j) {
+    this._reject(j);
+    return this._internalReject(j);
   }
 }
 class CommandSender {
-  constructor(Core, Rcon) {
+  constructor(Core, ipc) {
     this.Core = Core;
-    this.Rcon = Rcon;
+    this.ipc = ipc;
+    this.ipc.on("commandResult", this.resolveCommand.bind(this))
   }
+  CommandMapping = new Map();
+  CommandIndex = 0;
   paused = true;
   TimerId = -1;
   lastRun = -1;
+  resolveCommand({ id, result }) {
+    if (this.CommandMapping.has(id)) {
+      let curr = this.CommandMapping.get(id);
+      this.CommandMapping.delete(id);
+      console.log(`命令[${curr.id}]：${curr.Command} 结果:${result}`)
+      curr.resolve(result);
+    }
+  }
   async requestCommand(command, strict = false) {
     return new Promise((resolve, reject) => {
-      this.Queue.push(new CommanderTask(command, resolve, reject, strict));
+      const Task = new CommanderTask(command, resolve, reject, strict);
+      Task.promise = new Promise((r, j) => {
+        Task._internalResolve = r;
+        Task._internalReject = j;
+      })
+      this.Queue.push(Task);
       this.tryRunNext();
     });
   }
@@ -47,23 +66,30 @@ class CommandSender {
     this.lastRun = new Date().getTime();
     this.paused = false;
     let curr = this.Queue.shift();
-    console.log(`[${new Date().getTime()}]正在执行：${curr.Command} 队列中剩余:${this.Queue.length}`);
-    return this.Core.RconClient.send(curr.Command)
-      .then(a => {
-        curr.resolve(a);
-      })
+    curr.id = this.CommandIndex++;
+    this.CommandMapping.set(curr.id, curr);
+    console.log(`[${new Date().getTime()}]正在执行[${curr.id}]：${curr.Command} 队列中剩余:${this.Queue.length}`);
+    console.log(curr)
+    curr.promise.then(a => {
+      curr.resolve(a);
+    })
       .catch(e => {
         curr.reject(e);
         return this.Core.ErrorHandle.call(this.Core, e);
       })
       .finally(() => {
         if (this.Queue.length) {
-          console.log(`正在延迟执行捏:${delay} ms`);
+          if(delay) {
+            console.log(`正在延迟执行捏:${delay} ms`);
           this.TimerId = setTimeout(this.runNext.bind(this), delay);
+          } else {
+            return this.runNext();
+          }
         } else {
           this.paused = true;
         }
       });
+    this.ipc.emit("command", { command: curr.Command, id: curr.id });
   }
   Queue = [];
 }
