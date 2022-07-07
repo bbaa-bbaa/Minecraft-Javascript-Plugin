@@ -1,8 +1,5 @@
 let BasePlugin = require(__dirname + "/../basePlugin.js");
 const nbttool = require("nbt-ts");
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 class Teleport extends BasePlugin {
   static PluginName = "传送内核插件";
   constructor() {
@@ -15,16 +12,11 @@ class Teleport extends BasePlugin {
     };
   }
   async Teleport(Source, Target) {
-    if (!this.MultiWorld||true) {
-      if (this.Core.Players.indexOf(Target) > -1) {
-          this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
-      } else {
+    if (!this.MultiWorld) {
         this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
-      }
-      
     } else {
-      this.PluginLog("执行命令:"+`execute ${this.SelectorWarpper(Source)} ~ ~ ~ tpx ${this.SelectorWarpper(Target)}`)
-      await this.CommandSender(`execute ${this.SelectorWarpper(Source)} ~ ~ ~ tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+      this.PluginLog("执行命令:"+`tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`)
+      await this.CommandSender(`tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
     }
   }
   PlayerWarpper(Player) {
@@ -34,10 +26,10 @@ class Teleport extends BasePlugin {
       return Player;
     }
   }
-  PositionWarpper(Position, ignoreDim = false) {
+  PositionWarpper(Position) {
     if (typeof Position == "object" && "dim" in Position) {
-      if (this.MultiWorld && !ignoreDim) {
-        return `${Position.pos.join(" ")}`;
+      if (this.MultiWorld) {
+        return `${Position.pos.join(" ")} ${Position.dim}`;
       } else {
         return `${Position.pos.join(" ")}`;
       }

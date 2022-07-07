@@ -64,7 +64,7 @@ class BasePlugin {
   }
   async CommandSender(cmd) {
     // this.PluginLog(`[${new Date().getTime()}]执行命令:`+arguments[0])
-    return this.Core.CommandSender.requestCommand(cmd);
+    return this.Core.CommandSender.requestCommand(cmd).catch(()=>{});
   }
   async tellraw(Dest, Json) {
     if (this.newVersion && !/@/.test(Dest)) {

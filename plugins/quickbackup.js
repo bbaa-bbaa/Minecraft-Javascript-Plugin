@@ -16,7 +16,6 @@ class QuickBackup extends BasePlugin {
     this.wholeWorldDest = this.backupDest + "/World";
     this.PlayerDataDest = this.backupDest + "/Playerdata";
     this.SaveSource = `${this.Core.BaseDir}/world`;
-    this.RunServer = `${this.Core.BaseDir}/runserver`;
     fs.ensureDir(this.backupDest);
     fs.ensureDir(this.wholeWorldDest);
     fs.ensureDir(this.PlayerDataDest);
@@ -463,9 +462,9 @@ class QuickBackup extends BasePlugin {
       this.PluginLog(`清空World文件夹`);
       await fs.emptyDir(this.SaveSource);
       this.PluginLog(`释放存档`);
-      await runCommand(`tar zxvf ${backfile.path} -C ${this.SaveSource}`);
+      await runCommand(`tar --zstd xvf ${backfile.path} -C ${this.SaveSource}`);
       this.PluginLog(`启动服务器`);
-      await runCommand(this.RunServer);
+      // to do Runserver
       this.PluginLog(`完成`);
       this.cancelAllPending();
       this.Core.reconnectRcon("QuickBackup");
@@ -509,7 +508,7 @@ class QuickBackup extends BasePlugin {
   async RunBackup(comment) {
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
     this.PluginLog(`[${moment().format("HH:mm:ss")}]运行备份 备注:${comment}`);
-    let FileName = `${comment}.tar.gz`;
+    let FileName = `${comment}.tar.zst`;
     let Path = `/data/mcBackup/tmp/Minecraft/${FileName}`;
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
@@ -530,13 +529,13 @@ class QuickBackup extends BasePlugin {
       { text: "正在打包存档", color: "yellow" }
     ]);
     await fs.ensureDir("/data/mcBackup/tmp/Minecraft/world");
-    let CleanList = fs.readdirSync("/data/mcBackup/tmp/Minecraft").filter(a => /tar\.gz/.test(a));
+    let CleanList = fs.readdirSync("/data/mcBackup/tmp/Minecraft").filter(a => /tar\.zst/.test(a));
     for (let Item of CleanList) {
       await fs.promises.unlink("/data/mcBackup/tmp/Minecraft/" + Item);
     }
     await fs.emptyDir("/data/mcBackup/tmp/Minecraft/world");
     await fs.copy(this.SaveSource, "/data/mcBackup/tmp/Minecraft/world");
-    let a = await runCommand(`tar -cvzf ../${FileName} *`, { cwd: "/data/mcBackup/tmp/Minecraft/world" });
+    let a = await runCommand(`tar --zstd -cvf ../${FileName} *`, { cwd: "/data/mcBackup/tmp/Minecraft/world" });
     await fs.emptyDir("/data/mcBackup/tmp/Minecraft/world");
     let Stat = fs.statSync(Path);
     let Size = Stat.size / 1048576;

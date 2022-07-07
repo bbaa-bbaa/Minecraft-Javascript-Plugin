@@ -2,6 +2,7 @@ const Rcon = require("rcon-client").Rcon;
 const fs = require("fs-extra");
 const cp = require("child_process");
 const moment = require("moment");
+const ipc = require("@achrinza/node-ipc").default;
 const EventEmitter = require("events");
 const LogFileReader = require(__dirname + "/LogFileReader");
 const CommandSender = require(__dirname + "/CommandSender")
@@ -21,23 +22,16 @@ class PluginCore {
     this.PluginInterfaces = new Map();
     this.Crashed = false;
     this.Error = false;
-    this.connectRconClient(options);
+    this.ipc = ipc;
+    this.initIpc(options);
     this.addPluginRegister(this.registerNativeLogProcesser, this);
     this.addPluginRegister(this.addPluginRegister, this);
     this.loadBuiltinPlugins();
-    this.crashDetect();
     this.EventBus.on("disconnected", () => {
       this.Disconnected();
     });
     this.EventBus.on("connected", this.Connected.bind(this));
-    this.CommandSender = new CommandSender(this,this.RconClient);
-  }
-  crashDetect() {
-    fs.ensureDir(this.BaseDir + "/crash-reports/").then(() => {
-      fs.watch(this.BaseDir + "/crash-reports/", {}, (e, f) => {
-        this.Crashed = true;
-      });
-    })
+    this.CommandSender = new CommandSender(this, this.ipc.of.GM);
   }
   loadBuiltinPlugins() {
     this.registerPlugin(require(__dirname + "/plugins/simpleCommand.js"));
@@ -70,8 +64,43 @@ class PluginCore {
     return Root;
   }
   registerNativeLogProcesser(regexp, func, scope) {
-    console.log(`[PluginsCore]${scope.constructor.PluginName} 注册了一个原始日志处理器 ${func.name||`(anonymous)`} match:(regex)${regexp}`);
+    console.log(`[PluginsCore]${scope.constructor.PluginName} 注册了一个原始日志处理器 ${func.name || `(anonymous)`} match:(regex)${regexp}`);
     this.NativeLogProcessers.push({ regexp: regexp, func: func, scope: scope });
+  }
+  initIpc(options) {
+    this.ipc.config.slient=true;
+    this.ipc.connectTo("GM", "/tmp/MinecraftManager.service");
+    this.ipc.of.GM.on("connect", () => {
+      console.log(`[PluginsCore:IPC]IPC连接成功`)
+      this.ipc.of.GM.emit("status")
+    })
+    this.ipc.of.GM.on("disconnect", () => {
+      console.log(`[PluginsCore:IPC]IPC连接断开`)
+      this.EventBus.emit("disconnected");
+    })
+    this.ipc.of.GM.on("stop", () => {
+      this.EventBus.emit("disconnected");
+      console.log(`[PluginsCore:GameManager]服务器停止`)
+    })
+    this.ipc.of.GM.on("ready", () => {
+      this.EventBus.emit("connected");
+    })
+    this.ipc.of.GM.on("status", (s) => {
+      switch (s) {
+        case "waitPath":
+          console.log(`[PluginsCore:IPC]发送启动命令`)
+          this.ipc.of.GM.emit("path", this.BaseDir + "/start");
+          this.ipc.of.GM.emit("status")
+          break;
+        case "stop":
+          console.log(`[PluginsCore:IPC]启动服务器`)
+          this.ipc.of.GM.emit("startServer");
+          break;
+        case "running":
+          this.EventBus.emit("connected");
+          break;
+      }
+    })
   }
   connectRconClient(options) {
     return Rcon.connect(options.Rcon)
@@ -118,25 +147,13 @@ class PluginCore {
     if (this.LogFileReader.close) {
       this.LogFileReader.close();
     }
-    if(this.CommandSender&&this.CommandSender.cancelAll){
+    if (this.CommandSender && this.CommandSender.cancelAll) {
       this.CommandSender.cancelAll();
     }
   }
   async ErrorHandle(a) {
     console.error(a);
-    if (((this.RconClient.socket && this.RconClient.socket.destoryed) || !this.RconClient.socket) && !this.Error) {
-      this.Error = true;
-      this.EventBus.emit("disconnected");
-      console.log("[PluginsCore:Rcon]发生错误10s后重新链接");
-      if (this.Crashed) {
-        this.Crashed = false;
-        await runCommand(`${this.BaseDir}/runserver`);
-      }
-      setTimeout(() => {
-        console.log("[PluginsCore:Rcon]正在重连");
-        this.connectRconClient(this.options);
-      }, 10000);
-    }
+    return;
   }
   ProcessLog(line) {
     for (let Processr of this.NativeLogProcessers) {
