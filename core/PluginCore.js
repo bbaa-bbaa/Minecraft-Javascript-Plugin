@@ -68,11 +68,11 @@ class PluginCore {
     this.NativeLogProcessers.push({ regexp: regexp, func: func, scope: scope });
   }
   initIpc(options) {
-    this.ipc.config.slient=true;
+    this.ipc.config.silent=true;
     this.ipc.connectTo("GM", "/tmp/MinecraftManager.service");
     this.ipc.of.GM.on("connect", () => {
       console.log(`[PluginsCore:IPC]IPC连接成功`)
-      this.ipc.of.GM.emit("status")
+      this.ipc.of.GM.emit("state")
     })
     this.ipc.of.GM.on("disconnect", () => {
       console.log(`[PluginsCore:IPC]IPC连接断开`)
@@ -85,12 +85,12 @@ class PluginCore {
     this.ipc.of.GM.on("ready", () => {
       this.EventBus.emit("connected");
     })
-    this.ipc.of.GM.on("status", (s) => {
+    this.ipc.of.GM.on("state", (s) => {
       switch (s) {
         case "waitPath":
           console.log(`[PluginsCore:IPC]发送启动命令`)
           this.ipc.of.GM.emit("path", this.BaseDir + "/start");
-          this.ipc.of.GM.emit("status")
+          this.ipc.of.GM.emit("state")
           break;
         case "stop":
           console.log(`[PluginsCore:IPC]启动服务器`)
