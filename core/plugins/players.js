@@ -8,8 +8,7 @@ class PlayerLists extends BasePlugin {
     this.LoopId = 0;
   }
   init(Plugin) {
-    Plugin.registerNativeLogProcesser(/\w+ joined the game/, () => {this.updatePlayerLists() });
-    Plugin.registerNativeLogProcesser(/\w+ left the game/, () => { this.updatePlayerLists() });
+    Plugin.registerNativeLogProcesser(/\w+ (left|joined) the game/, () => {this.updatePlayerLists() });
     Object.defineProperty(this.Core, "Players", {
       get: () => {
         return this.Players;

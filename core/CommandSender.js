@@ -31,7 +31,7 @@ class CommandSender {
     if (this.CommandMapping.has(id)) {
       let curr = this.CommandMapping.get(id);
       this.CommandMapping.delete(id);
-      console.log(`命令[${curr.id}]：${curr.Command} 结果:${result}`)
+      console.log(`[CommandSender]命令[${curr.id}]：${curr.Command} 结果:${result}`)
       curr.resolve(result);
     }
   }
@@ -50,7 +50,7 @@ class CommandSender {
     if (new Date().getTime() - this.lastRun > delay) {
       if (this.Queue.length && this.paused) this.runNext();
     } else if (this.Queue.length && this.paused) {
-      console.log(`正在延迟执行捏:${delay - (new Date().getTime() - this.lastRun)} ms`)
+      console.log(`[CommandSender]正在延迟执行捏:${delay - (new Date().getTime() - this.lastRun)} ms`)
       this.paused = false;
       this.TimerId = setTimeout(this.runNext.bind(this), delay - (new Date().getTime() - this.lastRun));
     }
@@ -68,8 +68,7 @@ class CommandSender {
     let curr = this.Queue.shift();
     curr.id = this.CommandIndex++;
     this.CommandMapping.set(curr.id, curr);
-    console.log(`[${new Date().getTime()}]正在执行[${curr.id}]：${curr.Command} 队列中剩余:${this.Queue.length}`);
-    console.log(curr)
+    console.log(`[CommandSender]正在执行[${curr.id}]：${curr.Command} 队列中剩余:${this.Queue.length}`);
     curr.promise.then(a => {
       curr.resolve(a);
     })
@@ -80,7 +79,7 @@ class CommandSender {
       .finally(() => {
         if (this.Queue.length) {
           if(delay) {
-            console.log(`正在延迟执行捏:${delay} ms`);
+            console.log(`[CommandSender]正在延迟执行捏:${delay} ms`);
           this.TimerId = setTimeout(this.runNext.bind(this), delay);
           } else {
             return this.runNext();
