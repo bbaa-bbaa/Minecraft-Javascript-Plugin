@@ -23,6 +23,7 @@ class PluginCore {
     this.Crashed = false;
     this.Error = false;
     this.ipc = ipc;
+    this.ipcState="waitPath";
     this.initIpc(options);
     this.addPluginRegister(this.registerNativeLogProcesser, this);
     this.addPluginRegister(this.addPluginRegister, this);
@@ -75,17 +76,21 @@ class PluginCore {
       this.ipc.of.GM.emit("state")
     })
     this.ipc.of.GM.on("disconnect", () => {
+      this.ipcState="disconnect";
       console.log(`[PluginsCore:IPC]IPC连接断开`)
       this.EventBus.emit("disconnected");
     })
     this.ipc.of.GM.on("stop", () => {
       this.EventBus.emit("disconnected");
+      this.ipcState="stop"
       console.log(`[PluginsCore:GameManager]服务器停止`)
     })
     this.ipc.of.GM.on("ready", () => {
+      this.ipcState="running"
       this.EventBus.emit("connected");
     })
     this.ipc.of.GM.on("state", (s) => {
+      this.ipcState=s;
       switch (s) {
         case "waitPath":
           console.log(`[PluginsCore:IPC]发送启动命令`)

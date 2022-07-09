@@ -462,12 +462,14 @@ class QuickBackup extends BasePlugin {
       this.PluginLog(`清空World文件夹`);
       await fs.emptyDir(this.SaveSource);
       this.PluginLog(`释放存档`);
-      await runCommand(`tar --zstd xvf ${backfile.path} -C ${this.SaveSource}`);
+      await runCommand(`tar --zstd -xvf ${backfile.path} -C ${this.SaveSource}`);
       this.PluginLog(`启动服务器`);
-      // to do Runserver
+      if (this.Core.ipcState !== "disconnect" && this.ipc.of.GM) {
+        this.ipc.of.GM.emit("state");
+      }
       this.PluginLog(`完成`);
       this.cancelAllPending();
-      this.Core.reconnectRcon("QuickBackup");
+      //this.Core.reconnectRcon("QuickBackup");
     }, 3000);
   }
   async RunBackPd(backfile) {
@@ -514,16 +516,16 @@ class QuickBackup extends BasePlugin {
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "服务器正在备份...", color: "yellow" }
     ]);
-   /* await this.tellraw(`@a`, [
+    await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "正在保存存档 ", color: "yellow" },
       { text: "请勿快速移动", color: "red" }
     ]);
-    //await this.CommandSender("save-all");
+    await this.CommandSender("save-all");
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "存档保存成功", color: "green" }
-    ]);*/
+    ]);
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "正在打包存档", color: "yellow" }

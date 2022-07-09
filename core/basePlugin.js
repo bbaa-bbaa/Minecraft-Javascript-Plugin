@@ -8,6 +8,9 @@ class BasePlugin {
     const hash = crypto.createHash("sha1");
     this.Scoreboard_Prefix = hash.update(this.constructor.name).digest("hex");
   }
+  get ipc(){
+    return this.Core.ipc;
+  }
   PluginLog(t) {
     console.log(`[${this.constructor.PluginName}]` + t);
   }

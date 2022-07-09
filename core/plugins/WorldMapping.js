@@ -25,6 +25,7 @@ const _WorldMapping = {
   lunalus: "月球",
   haven: "天堂",
   abyss: "深渊",
+  twilight_forest:"暮色森林",
   nether: "地狱"
 };
 let WorldMapping = {};
@@ -65,9 +66,9 @@ class WorldsMapping extends BasePlugin {
     for (let [name, ids] of map) {
       for (let id of ids) {
         this.WorldMapping.id[id] = name;
-        this.PluginLog(`将世界${name}映射为id:${id}`);
       }
     }
+    this.PluginLog(`映射完成，共${Object.keys(this.WorldMapping.id).length}个世界`);
   }
 }
 module.exports = WorldsMapping;
