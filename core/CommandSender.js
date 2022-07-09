@@ -1,9 +1,16 @@
 let delay = 0;
+const enableQuene = true;
+const process = require("process");
 class CommanderTask {
-  constructor(command, resolve, reject, strict) {
-    this.Command = command;
+  constructor(command, id, resolve, reject, strict) {
+    this.command = command;
+    this.id = id;
     this._resolve = resolve;
     this._reject = reject;
+    this.promise = new Promise((r, j) => {
+      this._internalResolve = r;
+      this._internalReject = j;
+    });
     this.strict = strict;
   }
   id = 0;
@@ -20,7 +27,7 @@ class CommandSender {
   constructor(Core, ipc) {
     this.Core = Core;
     this.ipc = ipc;
-    this.ipc.on("commandResult", this.resolveCommand.bind(this))
+    this.ipc.on("commandResult", this.resolveCommand.bind(this));
   }
   CommandMapping = new Map();
   CommandIndex = 0;
@@ -31,17 +38,13 @@ class CommandSender {
     if (this.CommandMapping.has(id)) {
       let curr = this.CommandMapping.get(id);
       this.CommandMapping.delete(id);
-      console.log(`[CommandSender]命令[${curr.id}]：${curr.Command} 结果:${result}`)
+      //console.log(`[CommandSender]命令[${curr.id}]：${curr.Command} 结果:${result}`)
       curr.resolve(result);
     }
   }
   async requestCommand(command, strict = false) {
     return new Promise((resolve, reject) => {
-      const Task = new CommanderTask(command, resolve, reject, strict);
-      Task.promise = new Promise((r, j) => {
-        Task._internalResolve = r;
-        Task._internalReject = j;
-      })
+      const Task = new CommanderTask(command, this.CommandIndex++, resolve, reject, strict);
       this.Queue.push(Task);
       this.tryRunNext();
     });
@@ -50,7 +53,7 @@ class CommandSender {
     if (new Date().getTime() - this.lastRun > delay) {
       if (this.Queue.length && this.paused) this.runNext();
     } else if (this.Queue.length && this.paused) {
-      console.log(`[CommandSender]正在延迟执行捏:${delay - (new Date().getTime() - this.lastRun)} ms`)
+      console.log(`[CommandSender]正在延迟执行捏:${delay - (new Date().getTime() - this.lastRun)} ms`);
       this.paused = false;
       this.TimerId = setTimeout(this.runNext.bind(this), delay - (new Date().getTime() - this.lastRun));
     }
@@ -66,21 +69,20 @@ class CommandSender {
     this.lastRun = new Date().getTime();
     this.paused = false;
     let curr = this.Queue.shift();
-    curr.id = this.CommandIndex++;
-    this.CommandMapping.set(curr.id, curr);
-    console.log(`[CommandSender]正在执行[${curr.id}]：${curr.Command} 队列中剩余:${this.Queue.length}`);
-    curr.promise.then(a => {
-      curr.resolve(a);
-    })
+
+    this.CommandMapping.set(process.pid + "_" + curr.id, curr);
+    console.log(`[CommandSender]正在执行[${curr.id}]：${curr.command} 队列中剩余:${this.Queue.length}`);
+    curr.promise
       .catch(e => {
         curr.reject(e);
         return this.Core.ErrorHandle.call(this.Core, e);
       })
       .finally(() => {
+        if (!enableQuene) return;
         if (this.Queue.length) {
-          if(delay) {
+          if (delay) {
             console.log(`[CommandSender]正在延迟执行捏:${delay} ms`);
-          this.TimerId = setTimeout(this.runNext.bind(this), delay);
+            this.TimerId = setTimeout(this.runNext.bind(this), delay);
           } else {
             return this.runNext();
           }
@@ -88,7 +90,14 @@ class CommandSender {
           this.paused = true;
         }
       });
-    this.ipc.emit("command", { command: curr.Command, id: curr.id });
+    this.ipc.emit("command", { command: curr.command, id: process.pid + "_" + curr.id });
+    if (!enableQuene) {
+      if (this.Queue.length) {
+        return this.runNext();
+      } else {
+        this.paused = true;
+      }
+    }
   }
   Queue = [];
 }

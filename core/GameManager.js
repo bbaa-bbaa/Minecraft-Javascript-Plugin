@@ -8,7 +8,7 @@ function _writePoint() {
   process.stdout.write(".");
 }
 const writePoint = _.throttle(_writePoint, 1000);
-let waitMessage = 10;
+let waitMessage = 15;
 const skipWaitCommand = ["tellraw"];
 class CommanderTask {
   constructor(command, resolve, reject) {
@@ -57,6 +57,7 @@ const GameManager = {
     console.log(colors.green(`[MinecraftManager]执行命令:`) + colors.red(this.CurrCommand.Command));
     this.MinecraftProcess.stdin.write(this.CurrCommand.Command + "\n");
     const NowCommand = this.CurrCommand.Command.split(" ")[0];
+    // 无返回命令处理
     if (skipWaitCommand.indexOf(NowCommand) >= 0) {
       return this.FinishCommand();
     }
@@ -82,12 +83,8 @@ const GameManager = {
     });
     process.on("exit", async code => {
       if (this.MinecraftProcess && this.MinecraftProcess.kill) {
-        console.log(colors.green(`[MinecraftManager]等待服务器关闭`));
+       // console.log(colors.green(`[MinecraftManager]等待服务器关闭`));
         this.MinecraftProcess.kill();
-        while (this.state != "stop") {
-          console.log(colors.green(`[MinecraftManager]等待服务器关闭`));
-          await new Promise(r => setTimeout(r, 1000));
-        }
       }
     });
     process.on("SIGINT", async code => {
@@ -99,6 +96,21 @@ const GameManager = {
           await new Promise(r => setTimeout(r, 1000));
         }
       }
+      console.log(colors.green(`[MinecraftManager]10s后程序退出`));
+      await new Promise(r => setTimeout(r, 10000));
+      process.exit();
+    });
+    process.on("SIGTERM", async code => {
+      if (this.MinecraftProcess && this.MinecraftProcess.kill) {
+        console.log(colors.green(`[MinecraftManager]等待服务器关闭`));
+        this.MinecraftProcess.kill();
+        while (this.state != "stop") {
+          console.log(colors.green(`[MinecraftManager]等待服务器关闭`));
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      console.log(colors.green(`[MinecraftManager]10s后程序退出`));
+      await new Promise(r => setTimeout(r, 10000));
       process.exit();
     });
     ipc.server.on("command", ({ command, id }) => {
@@ -131,9 +143,9 @@ const GameManager = {
   },
   Stop() {
     this.state = "stop";
-    /*if (this._ReadyWaitId) {
+    if (this._ReadyWaitId) {
       clearTimeout(this._ReadyWaitId);
-    }*/
+    }
     ipc.server.broadcast("stop");
   },
   beforeReady() {
@@ -145,8 +157,8 @@ const GameManager = {
     this.state = "running";
     console.log(colors.green(`[MinecraftManager]REPL初始化完成，等待插件模块发送信息`));
     console.log(colors.green(`[MinecraftManager]延迟5s通知插件模块，等待服务稳定后在接收命令请求`));
-    console.log(colors.green(`[MinecraftManager]通知插件模块Minecraft Manager已准备好`));
     this._ReadyWaitId = setTimeout(() => {
+      console.log(colors.green(`[MinecraftManager]通知插件模块Minecraft Manager已准备好`));
       ipc.server.broadcast("ready");
     }, 5000);
   },
@@ -175,7 +187,7 @@ const GameManager = {
           colors.green(`[MinecraftManager]将命令:`) +
             colors.blue(this.CurrCommand.Command) +
             colors.green(`的输出储存为:`) +
-            colors.blue(match[1])
+            colors.yellow(match[1])
         );
         this.CurrCommand.buffer.push(match[1]);
         this.CurrCommand.timer = setTimeout(() => {
