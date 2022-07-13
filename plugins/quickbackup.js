@@ -12,7 +12,7 @@ class QuickBackup extends BasePlugin {
   constructor() {
     super(...arguments);
     this.schedule = null;
-    this.backupDest = "/data/mcBackup";
+    this.backupDest = "/data/mcBackup/RLCraft";
     this.wholeWorldDest = this.backupDest + "/World";
     this.PlayerDataDest = this.backupDest + "/Playerdata";
     this.SaveSource = `${this.Core.BaseDir}/world`;

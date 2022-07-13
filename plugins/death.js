@@ -8,7 +8,7 @@ class DeathCount extends BasePlugin {
   }
   async Start() {
     await this.Scoreboard.ensureScoreboard({ name: "Death", type: "deathCount", displayname: "死亡次数" });
-    await this.Scoreboard.displayScoreboard("Death", "belowName");
+    await this.Scoreboard.displayScoreboard("Death", "sidebar");
   }
 }
 module.exports = DeathCount;
