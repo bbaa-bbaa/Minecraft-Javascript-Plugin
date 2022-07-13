@@ -10,9 +10,20 @@ class Teleport extends BasePlugin {
     this.Core.Teleport = async (Source, Target) => {
       return this.Teleport(Source, Target);
     };
-  }
+  }/*
   async Teleport(Source, Target) {
     if (!this.MultiWorld) {
+      this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
+    } else {
+      if (this.Core.Players.indexOf(Target) > -1) {
+        Target = await this.getPlayerPosition(Target);
+      }
+      this.PluginLog(`执行命令：forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`)
+      return this.CommandSender(`forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+    }
+  }*/
+  async Teleport(Source, Target) {
+    if (!this.MultiWorld||true) {
         this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
     } else {
       this.PluginLog("执行命令:"+`tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`)
@@ -29,7 +40,7 @@ class Teleport extends BasePlugin {
   PositionWarpper(Position) {
     if (typeof Position == "object" && "dim" in Position) {
       if (this.MultiWorld) {
-        return `${Position.pos.join(" ")} ${Position.dim}`;
+        return `${Position.dim} ${Position.pos.join(" ")}`;
       } else {
         return `${Position.pos.join(" ")}`;
       }
