@@ -24,6 +24,8 @@ class PluginCore {
     this.Error = false;
     this.ipc = ipc;
     this.ipcState="waitPath";
+    this.crashDetect();
+    this.Crashed=false;
     this.initIpc(options);
     this.addPluginRegister(this.registerNativeLogProcesser, this);
     this.addPluginRegister(this.addPluginRegister, this);
@@ -33,6 +35,13 @@ class PluginCore {
     });
     this.EventBus.on("connected", this.Connected.bind(this));
     this.CommandSender = new CommandSender(this, this.ipc.of.GM);
+  }
+  crashDetect() {
+    fs.ensureDir(this.BaseDir + "/crash-reports/").then(() => {
+      fs.watch(this.BaseDir + "/crash-reports/", {}, (e, f) => {
+        this.Crashed = true;
+      });
+    })
   }
   loadBuiltinPlugins() {
     this.registerPlugin(require(__dirname + "/plugins/simpleCommand.js"));
@@ -84,6 +93,10 @@ class PluginCore {
       this.EventBus.emit("disconnected");
       this.ipcState="stop"
       console.log(`[PluginsCore:GameManager]服务器停止`)
+      if(this.Crashed) {
+        this.Crashed=false
+        this.ipc.of.GM.emit("state")
+      }
     })
     this.ipc.of.GM.on("ready", () => {
       this.ipcState="running"
