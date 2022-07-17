@@ -27,7 +27,6 @@ class TelePortCommand extends BasePlugin {
           let Target = List[0];
           await this.updateScore(this);
           let HealthList = await this.getScoreByName("Health");
-          console.log(HealthList)
           let MyHealth = HealthList[Player];
           let TargetHealth = HealthList[Target];
           if (MyHealth <= 2) {
