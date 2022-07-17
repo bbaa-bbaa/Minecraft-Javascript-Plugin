@@ -12,7 +12,7 @@ class QuickBackup extends BasePlugin {
   constructor() {
     super(...arguments);
     this.schedule = null;
-    this.backupDest = "/data/mcBackup/RLCraft";
+    this.backupDest = "/data/mcBackup/MineZ";
     this.wholeWorldDest = this.backupDest + "/World";
     this.PlayerDataDest = this.backupDest + "/Playerdata";
     this.SaveSource = `${this.Core.BaseDir}/world`;
@@ -536,7 +536,14 @@ class QuickBackup extends BasePlugin {
       await fs.promises.unlink("/data/mcBackup/tmp/Minecraft/" + Item);
     }
     await fs.emptyDir("/data/mcBackup/tmp/Minecraft/world");
-    await fs.copy(this.SaveSource, "/data/mcBackup/tmp/Minecraft/world");
+    while (
+      await fs
+        .copy(this.SaveSource, "/data/mcBackup/tmp/Minecraft/world")
+        .then(a => false)
+        .catch(a => true)
+    ) {
+      // do notings
+    }
     let a = await runCommand(`tar --zstd -cvf ../${FileName} *`, { cwd: "/data/mcBackup/tmp/Minecraft/world" });
     await fs.emptyDir("/data/mcBackup/tmp/Minecraft/world");
     let Stat = fs.statSync(Path);

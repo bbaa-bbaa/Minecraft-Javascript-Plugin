@@ -10,18 +10,30 @@ class Teleport extends BasePlugin {
     this.Core.Teleport = async (Source, Target) => {
       return this.Teleport(Source, Target);
     };
-  }/*
-  async Teleport(Source, Target) {
+  }
+  async Teleport(Source, Target, retry = 0) {
     if (!this.MultiWorld) {
       this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
     } else {
       if (this.Core.Players.indexOf(Target) > -1) {
-        Target = await this.getPlayerPosition(Target);
+        Target = await this.getPlayerPosition(Target).catch(() => {
+          return "crash";
+        });
+        if (Target == "crash" && retry < 3) {
+          return this.Teleport(Source, Target, ++retry);
+        }
       }
-      this.PluginLog(`执行命令：forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`)
-      return this.CommandSender(`forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+      this.PluginLog(`执行命令：forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+      return this.CommandSender(`forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).then(
+        changedim => {
+          if (/is already in the dimension specified/.test(changedim)) {
+            this.PluginLog(`执行命令：tp ${this.SelectorWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+            return this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+          }
+        }
+      );
     }
-  }*/
+  } /*
   async Teleport(Source, Target) {
     if (!this.MultiWorld||true) {
         this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
@@ -29,7 +41,7 @@ class Teleport extends BasePlugin {
       this.PluginLog("执行命令:"+`tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`)
       await this.CommandSender(`tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
     }
-  }
+  }*/
   PlayerWarpper(Player) {
     if (this.newVersion) {
       return `@e[type="minecraft:player",limit=1,name="${Player}"]`;
@@ -37,9 +49,9 @@ class Teleport extends BasePlugin {
       return Player;
     }
   }
-  PositionWarpper(Position) {
+  PositionWarpper(Position,forceNotMultWorld=false) {
     if (typeof Position == "object" && "dim" in Position) {
-      if (this.MultiWorld) {
+      if (this.MultiWorld&&!forceNotMultWorld) {
         return `${Position.dim} ${Position.pos.join(" ")}`;
       } else {
         return `${Position.pos.join(" ")}`;
