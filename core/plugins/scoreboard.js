@@ -81,7 +81,6 @@ class Scoreboard extends BasePlugin {
   async updateScore() {
     if (!this.newVersion) {
       return this.CommandSender(`scoreboard players list *`).then(r => {
-        console.log(r)
         r = r.replace(/Player \w+ has no scores recorded/g, "");
         let regexp = /Showing \d+ tracked objective\(s\) for (\w+):(.*?)(?=Showing|$)/g;
         let player;
