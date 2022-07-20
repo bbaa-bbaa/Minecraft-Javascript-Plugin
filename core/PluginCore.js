@@ -12,6 +12,7 @@ class PluginCore {
   constructor(options) {
     console.log(`Plugins Core 启动`);
     this.RconClient = {};
+    this.isForge=options.isForge;
     this.EventBus = new EventEmitter();
     this.LogFileReader = {};
     this.LogFile = options.BaseDir + "/logs/latest.log";

@@ -4,7 +4,6 @@ class Teleport extends BasePlugin {
   static PluginName = "传送内核插件";
   constructor() {
     super(...arguments);
-    this.MultiWorld = false;
   }
   init(Plugin) {
     this.Core.Teleport = async (Source, Target) => {
@@ -12,9 +11,7 @@ class Teleport extends BasePlugin {
     };
   }
   async Teleport(Source, Target, retry = 0) {
-    if (!this.MultiWorld) {
-      this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
-    } else {
+    if (this.newVersion) {
       if (this.Core.Players.indexOf(Target) > -1) {
         Target = await this.getPlayerPosition(Target).catch(() => {
           return "crash";
@@ -23,35 +20,46 @@ class Teleport extends BasePlugin {
           return this.Teleport(Source, Target, ++retry);
         }
       }
-      this.PluginLog(`执行命令：forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
-      return this.CommandSender(`forge setdim ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).then(
-        changedim => {
-          if (/is already in the dimension specified/.test(changedim)) {
-            this.PluginLog(`执行命令：tp ${this.SelectorWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
-            return this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+      this.CommandSender(`execute as ${this.PlayerWarpper(Source)} rotated as ${this.PlayerWarpper(Source)} in ${Target.dim} run teleport ${this.SelectorWarpper(Target)}`)
+    }
+    else {
+      if (!this.isForge) {
+        this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => { });
+      } else {
+        if (this.Core.Players.indexOf(Target) > -1) {
+          Target = await this.getPlayerPosition(Target).catch(() => {
+            return "crash";
+          });
+          if (Target == "crash" && retry < 3) {
+            return this.Teleport(Source, Target, ++retry);
           }
         }
-      );
+        this.PluginLog(`执行命令：forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+        return this.CommandSender(`forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`).then(
+          changedim => {
+            if (/is already in the dimension specified/.test(changedim)) {
+              this.PluginLog(`执行命令：tp ${this.PlayerWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+              return this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+            }
+          }
+        );
+      }
     }
   } /*
   async Teleport(Source, Target) {
-    if (!this.MultiWorld||true) {
+    if (!this.isForge||true) {
         this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
     } else {
       this.PluginLog("执行命令:"+`tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`)
       await this.CommandSender(`tpx ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
     }
   }*/
-  PlayerWarpper(Player) {
+  PositionWarpper(Position, forceNotMultWorld = false) {
     if (this.newVersion) {
-      return `@e[type="minecraft:player",limit=1,name="${Player}"]`;
-    } else {
-      return Player;
+      return Position.pos.join(" ");
     }
-  }
-  PositionWarpper(Position,forceNotMultWorld=false) {
     if (typeof Position == "object" && "dim" in Position) {
-      if (this.MultiWorld&&!forceNotMultWorld) {
+      if (this.isForge && !forceNotMultWorld) {
         return `${Position.dim} ${Position.pos.join(" ")}`;
       } else {
         return `${Position.pos.join(" ")}`;
@@ -73,25 +81,10 @@ class Teleport extends BasePlugin {
       return this.PlayerWarpper(Selector);
     }
   }
-  async getPlayerPosition(Player) {
-    let pos, dim;
-    if (!this.newVersion) {
-      await this.CommandSender(
-        `execute ${Player} ~ ~ ~ summon minecraft:armor_stand ~ ~ ~ {CustomName:"TeleportProber_${Player}",Invulnerable:1b,NoGravity:1b,Invisible:true}`
-      );
-      const entityData = await this.CommandSender(`entitydata @e[name=TeleportProber_${Player}] {}`);
-      await this.CommandSender(`kill @e[name=TeleportProber_${Player}]`);
-      let Nbt = nbttool.parse(entityData.substring(entityData.indexOf(":") + 1).trim());
-      pos = Nbt.Pos.map(b => b.toFixed(2));
-      dim = Number(Nbt.Dimension);
-    }
-    return { pos, dim };
-  }
   async Start() {
-    let text = await this.CommandSender("forge dimensions");
-    if (/Currently registered dimensions by type/.test(text)) {
+    //let text = await this.CommandSender("forge dimensions");
+    if (this.isForge) {
       this.PluginLog("为Forge 多世界游戏，启用跨世界TP支持");
-      this.MultiWorld = true;
       return;
     }
   }

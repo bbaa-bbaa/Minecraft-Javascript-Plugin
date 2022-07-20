@@ -24,33 +24,15 @@ class Home extends BasePlugin {
     Plugin.registerCommand("delhome", this.delhome.bind(this));
   }
   async sethome(Player, homename = "default") {
-    let pos;
-    let dim = 0;
-    if (this.newVersion) {
-      this.CommandSender(`data get entity @e[type="minecraft:player",limit=1,name="${Player}"] Pos`).then(async a => {
-        pos = a
-          .split("[")[1]
-          .replace(/(\]|d)/g, "")
-          .split(",")
-          .map(b => Number(b.trim()).toFixed(2));
-      });
-    } else {
-      await this.CommandSender(
-        `execute ${Player} ~ ~ ~ summon minecraft:armor_stand ~ ~ ~ {CustomName:"setHomePlugin_${Player}",Invulnerable:1b,NoGravity:1b,Invisible:true}`
-      );
-      const entityData = await this.CommandSender(`entitydata @e[name=setHomePlugin_${Player}] {}`);
-      await this.CommandSender(`kill @e[name=setHomePlugin_${Player}]`);
-      let Nbt = nbttool.parse(entityData.substring(entityData.indexOf(":") + 1).trim());
-      pos = Nbt.Pos.map(b => b.toFixed(2));
-      dim = Number(Nbt.Dimension);
-    }
+    let { pos, dim } = await this.getPlayerPosition(Player);
+    console.log(pos,dim)
     this.tellraw(Player, [
       { text: "已在", color: "yellow" },
       { text: `维度[${this.getWorldName(dim)}]的[${pos.join(", ")}]`, color: "green" },
       { text: `设置家 ${homename}`, color: "yellow" }
     ]);
-    if(!HomeData[Player]){
-      HomeData[Player]={};
+    if (!HomeData[Player]) {
+      HomeData[Player] = {};
     }
     HomeData[Player][homename] = { pos, dim };
     writeHomeData();
@@ -87,12 +69,12 @@ class Home extends BasePlugin {
     if (HomeData[Player][homename]) {
       this.tellraw(Player, [{ text: `两秒后tp回家 ${homename}`, color: "yellow" }]);
       setTimeout(() => {
-        this.Teleport(Player,HomeData[Player][homename])
+        this.Teleport(Player, HomeData[Player][homename])
       }, 2000);
     } else {
       this.tellraw(Player, [{ text: `没有设置家 ${homename}`, color: "red" }]);
     }
   }
-  async Start() {}
+  async Start() { }
 }
 module.exports = Home;
