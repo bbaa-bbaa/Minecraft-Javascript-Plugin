@@ -18,6 +18,7 @@ class PluginCore {
     this.LogFile = options.BaseDir + "/logs/latest.log";
     this.BaseDir = options.BaseDir;
     this.options = options;
+    this.PendingRestart=false;
     this.PluginRegisters = [];
     this.NativeLogProcessers = [];
     this.PluginInterfaces = new Map();
@@ -94,8 +95,9 @@ class PluginCore {
       this.EventBus.emit("disconnected");
       this.ipcState="stop"
       console.log(`[PluginsCore:GameManager]服务器停止`)
-      if(this.Crashed) {
-        this.Crashed=false
+      if(this.Crashed||this.PendingRestart) {
+        this.Crashed=false;
+        this.PendingRestart=false;
         this.ipc.of.GM.emit("state")
       }
     })
