@@ -20,7 +20,7 @@ class Status extends BasePlugin {
       try {
         let Num = Number(log.match(/\[Server thread\/INFO\].*?\<.*?\>\s([+-\d]+)\s*$/)[1]);
         this.CommandSender(`me ${Num + 1}`);
-      } catch (e) {}
+      } catch (e) { }
     });
     setInterval(async () => {
       si.networkStats(await si.networkInterfaceDefault()).then(data => {
@@ -56,8 +56,8 @@ class Status extends BasePlugin {
                 Number(la / this.Info.cpu.length) < 0.4
                   ? "green"
                   : Number(la / this.Info.cpu.length) < 0.6
-                  ? "yellow"
-                  : "red"
+                    ? "yellow"
+                    : "red"
             }
           ];
         })
@@ -85,13 +85,15 @@ class Status extends BasePlugin {
         { text: `${(this.Info.network.tx / 1024).toFixed(2)}KB/s↑`, color: "green" }
       ]);
     }
+    if(!this.isForge) return
     this.CommandSender("forge tps")
       .then(async statustext => {
-        let re = /.*?(\(.*?\)|Overall).:.*?tick time:.(.*?).ms.*?TPS:.(.{6})/g;
+        let re = this.newVersion ? /(?:Dim | )+(.*?)[ ]?(?:\(.*?\))?: Mean tick time:.(.*?).ms.*?TPS:.(.{6})/g : /.*?(\(.*?\)|Overall).:.*?tick time:.(.*?).ms.*?TPS:.(.{6})/g;
         let worldStatus;
         while ((worldStatus = re.exec(statustext))) {
           let [Source, World, MSPT, TPS] = worldStatus;
-          World = World.replace(/[\(\)]/g, "");
+          console.log(World, MSPT, TPS)
+          World = this.newVersion ? World : World.replace(/[\(\)]/g, "");
           MSPT = Number(MSPT);
           TPS = Math.min(20, 1000 / MSPT).toFixed(2);
           if (!force && World == "Overall") {
@@ -146,12 +148,14 @@ class Status extends BasePlugin {
           ]);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }
   Start() {
-    this.LoopId = setInterval(() => {
-      this.status();
-    }, 5000);
+    if (this.isForge) {
+      this.LoopId = setInterval(() => {
+        this.status();
+      }, 5000);
+    }
   }
   Pause() {
     clearInterval(this.LoopId);

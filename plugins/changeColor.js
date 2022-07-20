@@ -47,8 +47,6 @@ class ChangeColor extends BasePlugin {
   }
   init(Plugin) {
     if (!this.newVersion) {
-      this.PluginLog(`旧模式`)
-      Plugin.registerCommand("changecolor", this.colorNew.bind(this));
       return this.PluginLog(`颜色代码不支持旧版本Minecraft，跳过加载`);
     } else {
       this.PluginLog(`新版本模式`)
@@ -74,9 +72,10 @@ class ChangeColor extends BasePlugin {
     args = args.join(" ");
     let basenbt;
     const rawNbt = await this.CommandSender(
-      `data get entity @e[type="minecraft:player",limit=1,name="${Player}"] SelectedItem`
+      `data get entity @e[type=minecraft:player,limit=1,name='${Player}'] SelectedItem`
     );
     basenbt = nbttool.parse(rawNbt.substring(rawNbt.indexOf(":") + 1).trim());
+    console.log(basenbt)
     let Tag = basenbt.tag;
     let FormatArray = [];
     try {
@@ -90,7 +89,7 @@ class ChangeColor extends BasePlugin {
     }
     this.tellraw(Player, [{ text: "正在修改你主手上的物品名称为", color: "red" }, ...FormatArray]);
     return this.CommandSender(
-      `item replace entity @e[type="minecraft:player",limit=1,name="${Player}"] weapon.mainhand with ${
+      `item replace entity @e[type=minecraft:player,limit=1,name="${Player}"] weapon.mainhand with ${
         basenbt.id
       }${nbttool.stringify(Tag)} ${Number(basenbt.Count)}`
     );

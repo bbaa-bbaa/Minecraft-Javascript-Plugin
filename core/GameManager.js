@@ -166,7 +166,7 @@ const GameManager = {
     if (this.state !== "running") {
       if (this.state == "waitForReady" && /Done \(\d*\.\d*s\)!/.test(message)) {
         this.beforeReady();
-      } else if (this.state == "beforeReady" && /Unknown command. Try \/help for a list of commands/.test(message)) {
+      } else if (this.state == "beforeReady" && /(Unknown command. Try \/help for a list of commands|Unknown or incomplete command)/.test(message)) {
         this.Ready();
       } else {
         writePoint();
@@ -180,7 +180,7 @@ const GameManager = {
       !/\w+ (left|joined) the game/.test(message)
     ) {
       if (this.CurrCommand.timer) clearTimeout(this.CurrCommand.timer);
-      let match = /\[.*DedicatedServer\]:(.*)$/.exec(message);
+      let match = /\[.*?DedicatedServer.*?\]:(.*)$/.exec(message);
 
       if (match[1]) {
         console.log(

@@ -2,21 +2,55 @@ const crypto = require("crypto");
 const fs = require("fs");
 const uuid = require("uuid").stringify;
 let uuidCache = {};
+const nbttool = require("nbt-ts");
 class BasePlugin {
   constructor(Core) {
     this.Core = Core;
     const hash = crypto.createHash("sha1");
     this.Scoreboard_Prefix = hash.update(this.constructor.name).digest("hex");
   }
-  get ipc(){
+  get ipc() {
     return this.Core.ipc;
+  }
+  get isForge() {
+    return this.Core.isForge;
+  }
+  PlayerWarpper(Player) {
+    if (this.newVersion) {
+      return `@e[type=minecraft:player,limit=1,name="${Player}"]`;
+    } else {
+      return Player;
+    }
+  }
+  async getPlayerPosition(Player) {
+    let pos, dim;
+    if (!this.newVersion) {
+      await this.CommandSender(
+        `execute ${Player} ~ ~ ~ summon minecraft:armor_stand ~ ~ ~ {CustomName:"getPlayerPositionProber_${Player}",Invulnerable:1b,NoGravity:1b,Invisible:true}`
+      );
+      const entityData = await this.CommandSender(`entitydata @e[name=getPlayerPositionProber_${Player}] {}`);
+      await this.CommandSender(`kill @e[name=getPlayerPositionProber_${Player}]`);
+      let Nbt = nbttool.parse(entityData.substring(entityData.indexOf(":") + 1).trim());
+      pos = Nbt.Pos.map(b => b.toFixed(2));
+      dim = Number(Nbt.Dimension);
+    } else {
+      const entityData = await this.CommandSender(`data get entity ${this.PlayerWarpper(Player)}`);
+      let Nbt = nbttool.parse(entityData.substring(entityData.indexOf(":") + 1).trim());
+      pos = Nbt.Pos.map(b => b.toFixed(2));
+      dim = Nbt.Dimension;
+    }
+    return { pos, dim };
   }
   PluginLog(t) {
     console.log(`[${this.constructor.PluginName}]` + t);
   }
   getWorldName(a) {
-    if (typeof Number(a) == "number" && !isNaN(Number(a))) {
-      a = this.Core.WorldMapping.id[a];
+    if (this.newVersion) {
+      a = a.split(":").pop()
+    } else {
+      if (typeof Number(a) == "number" && !isNaN(Number(a))) {
+        a = this.Core.WorldMapping.id[a];
+      }
     }
     if (this.Core.WorldMapping.disName[a.toUpperCase()]) {
       return this.Core.WorldMapping.disName[a.toUpperCase()];
@@ -39,7 +73,7 @@ class BasePlugin {
     if (this.newVersion) {
       uuidCache[Player] = this.ConvertUUID(
         await this.CommandSender(
-          this.newVersion ? `data get entity @e[type="minecraft:player",limit=1,name="${Player}"] UUID` : "; 0,0,0,0"
+          this.newVersion ? `data get entity @e[type=minecraft:player,limit=1,name="${Player}"] UUID` : "; 0,0,0,0"
         )
           .then(a => {
             return a
@@ -67,7 +101,7 @@ class BasePlugin {
   }
   async CommandSender(cmd) {
     // this.PluginLog(`[${new Date().getTime()}]执行命令:`+arguments[0])
-    return this.Core.CommandSender.requestCommand(cmd).catch(()=>{});
+    return this.Core.CommandSender.requestCommand(cmd).catch(() => { });
   }
   async tellraw(Dest, Json) {
     if (this.newVersion && !/@/.test(Dest)) {

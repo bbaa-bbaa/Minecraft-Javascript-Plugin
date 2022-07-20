@@ -25,7 +25,7 @@ const _WorldMapping = {
   lunalus: "月球",
   haven: "天堂",
   abyss: "深渊",
-  twilight_forest:"暮色森林",
+  twilight_forest: "暮色森林",
   nether: "地狱"
 };
 let WorldMapping = {};
@@ -46,29 +46,34 @@ class WorldsMapping extends BasePlugin {
   async Start() {
     return this.getWorldMapping();
   }
-  async Pause() {}
+  async Pause() { }
   async getWorldMapping() {
-    let text = await this.CommandSender("forge dimensions");
-    if (!/Currently registered dimensions by type/.test(text)) {
-      this.PluginLog("非Forge 多世界游戏，终止映射");
-      return;
-    }
-    const map = text
-      .replace("Currently registered dimensions by type:", "")
-      .replace(/\{/g, "")
-      .split("}")
-      .map(a => a.split(":").map(b => b.trim()))
-      .filter(a => a.length == 2)
-      .map(a => {
-        a[1] = a[1].split(",").map(b => b.trim());
-        return a;
-      });
-    for (let [name, ids] of map) {
-      for (let id of ids) {
-        this.WorldMapping.id[id] = name;
+    if (this.isForge && !this.newVersion) {
+      let text = await this.CommandSender("forge dimensions");
+      if (!/Currently registered dimensions by type/.test(text)) {
+        this.PluginLog("非Forge 多世界游戏，终止映射");
+        return;
       }
+      const map = text
+        .replace("Currently registered dimensions by type:", "")
+        .replace(/\{/g, "")
+        .split("}")
+        .map(a => a.split(":").map(b => b.trim()))
+        .filter(a => a.length == 2)
+        .map(a => {
+          a[1] = a[1].split(",").map(b => b.trim());
+          return a;
+        });
+      for (let [name, ids] of map) {
+        for (let id of ids) {
+          this.WorldMapping.id[id] = name;
+        }
+      }
+      this.PluginLog(`映射完成，共${Object.keys(this.WorldMapping.id).length}个世界`);
+    } else if(this.newVersion) {
+      this.PluginLog("新版本游戏，无需映射");
     }
-    this.PluginLog(`映射完成，共${Object.keys(this.WorldMapping.id).length}个世界`);
+    
   }
 }
-module.exports = WorldsMapping;
+module.exports=WorldsMapping;
