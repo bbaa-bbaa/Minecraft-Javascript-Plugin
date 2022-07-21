@@ -7,7 +7,7 @@ class Status extends BasePlugin {
   static PluginName = "监控系统";
   constructor() {
     super(...arguments);
-    this.Info = { cpu: {}, network: {} };
+    this.Info = { cpu: [], network: {} };
     this.LoopId = 0;
     this.LastMspt = 0;
     this.MSPTDiffCount = 0;

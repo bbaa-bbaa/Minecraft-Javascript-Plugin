@@ -36,7 +36,7 @@ class LogFileReader {
         this.Pos = curr.size;
         let Lines = buf.toString("utf8").split("\n");
         for (let Line of Lines) {
-          if (Line.length == 0) {
+          if (Line.length == 0 || Line.length>200) {
             continue;
           }
           this.Core.ProcessLog(Line);
