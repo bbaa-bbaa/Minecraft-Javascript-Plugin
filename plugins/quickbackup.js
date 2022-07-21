@@ -40,11 +40,12 @@ class QuickBackup extends BasePlugin {
       choice: ""
     };
     this.Pending = "";
+    this.Rollbacking=false;
   }
   init(Plugin) {
     Plugin.registerCommand("qb", this.Cli);
     this.Core.EventBus.on("playerlistchange", List => {
-      if (List == 0) {
+      if (List == 0&&!this.Rollbacking) {
         this.RunBackup(`自动备份-玩家离开-${moment().format("YY-MM-DD-HH-mm-ss")}`);
       }
     });
@@ -388,6 +389,7 @@ class QuickBackup extends BasePlugin {
       choice: ""
     };
     this.Pending = "";
+    this.Rollbacking=false;
   }
   getBackupList(list) {
     if (list == "wholeWorld") {
@@ -455,6 +457,7 @@ class QuickBackup extends BasePlugin {
   }
   async RunBack(backfile) {
     this.PluginLog(`[${moment().format("HH:mm:ss")}]回档 备注:${backfile.filename}`);
+    this.Rollbacking=true;
     this.schedule.cancel();
     this.schedule2.cancel();
     await this.CommandSender("stop");
@@ -474,6 +477,7 @@ class QuickBackup extends BasePlugin {
   async RunBackPd(backfile) {
     this.PluginLog(`[${moment().format("HH:mm:ss")}]回档-仅玩家数据 备注:${backfile.filename}`);
     this.PluginLog(`请求者信息:${JSON.stringify(this.backpdPending.requester)}`);
+    this.Rollbacking=true;
     await this.CommandSender("kick " + this.backpdPending.requester.name + " 正在准备回档");
     await this.CommandSender("ban " + this.backpdPending.requester.name + " 正在回档");
     setTimeout(async () => {

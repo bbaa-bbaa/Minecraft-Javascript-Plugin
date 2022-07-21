@@ -92,7 +92,7 @@ class Status extends BasePlugin {
         let worldStatus;
         while ((worldStatus = re.exec(statustext))) {
           let [Source, World, MSPT, TPS] = worldStatus;
-          console.log(World, MSPT, TPS)
+         // console.log(World, MSPT, TPS)
           World = this.newVersion ? World : World.replace(/[\(\)]/g, "");
           MSPT = Number(MSPT);
           TPS = Math.min(20, 1000 / MSPT).toFixed(2);

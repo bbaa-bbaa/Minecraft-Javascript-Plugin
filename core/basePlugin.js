@@ -69,11 +69,11 @@ class BasePlugin {
     return uuid(new Uint8Array(arr));
   }
   async getUUID(Player) {
-    if (uuidCache[Player]) return uuidCache[Player];
+    if (uuidCache[Player] && uuidCache[Player] != "00000000-0000-0000-0000-000000000000") return uuidCache[Player];
     if (this.newVersion) {
       uuidCache[Player] = this.ConvertUUID(
         await this.CommandSender(
-          this.newVersion ? `data get entity @e[type=minecraft:player,limit=1,name="${Player}"] UUID` : "; 0,0,0,0"
+          `data get entity @e[type=minecraft:player,limit=1,name="${Player}"] UUID`
         )
           .then(a => {
             return a
@@ -97,6 +97,7 @@ class BasePlugin {
         }
       }
     }
+    console.log(uuidCache)
     return uuidCache[Player];
   }
   async CommandSender(cmd) {
