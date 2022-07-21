@@ -30,13 +30,12 @@ class LogFileReader {
     } else if (!diff) {
       return;
     }
-    let buf = Buffer.alloc(diff);
-    this.Handle.read(buf, 0, diff, this.Pos)
-      .then(() => {
+    this.Handle.read(Buffer.alloc(diff), 0, diff, this.Pos)
+      .then(({ bytesRead,buf }) => {
         this.Pos = curr.size;
         let Lines = buf.toString("utf8").split("\n");
         for (let Line of Lines) {
-          if (Line.length == 0 || Line.length>200) {
+          if (Line.length == 0 || Line.length > 200) {
             continue;
           }
           this.Core.ProcessLog(Line);
