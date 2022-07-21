@@ -66,7 +66,7 @@ class Home extends BasePlugin {
     }
   }
   async home(Player, homename = "default") {
-    if (HomeData[Player][homename]) {
+    if (HomeData[Player]&&HomeData[Player][homename]) {
       this.tellraw(Player, [{ text: `两秒后tp回家 ${homename}`, color: "yellow" }]);
       setTimeout(() => {
         this.Teleport(Player, HomeData[Player][homename])
