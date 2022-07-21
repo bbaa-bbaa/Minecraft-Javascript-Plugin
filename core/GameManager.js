@@ -63,7 +63,7 @@ const GameManager = {
     }
     this.CurrCommand.timer = setTimeout(() => {
       return this.FinishCommand();
-    }, 100);
+    }, 1000);
   },
   Init() {
     ipc.config.silent = true;
@@ -83,7 +83,7 @@ const GameManager = {
     });
     process.on("exit", async code => {
       if (this.MinecraftProcess && this.MinecraftProcess.kill) {
-       // console.log(colors.green(`[MinecraftManager]等待服务器关闭`));
+        // console.log(colors.green(`[MinecraftManager]等待服务器关闭`));
         this.MinecraftProcess.kill();
       }
     });
@@ -166,7 +166,10 @@ const GameManager = {
     if (this.state !== "running") {
       if (this.state == "waitForReady" && /Done \(\d*\.\d*s\)!/.test(message)) {
         this.beforeReady();
-      } else if (this.state == "beforeReady" && /(Unknown command. Try \/help for a list of commands|Unknown or incomplete command)/.test(message)) {
+      } else if (
+        this.state == "beforeReady" &&
+        /(Unknown command. Try \/help for a list of commands|Unknown or incomplete command)/.test(message)
+      ) {
         this.Ready();
       } else {
         writePoint();

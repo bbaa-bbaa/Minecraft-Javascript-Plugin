@@ -46,7 +46,7 @@ class BasePlugin {
   }
   getWorldName(a) {
     if (this.newVersion) {
-      a = a.split(":").pop()
+      a = a.split(":").pop();
     } else {
       if (typeof Number(a) == "number" && !isNaN(Number(a))) {
         a = this.Core.WorldMapping.id[a];
@@ -72,9 +72,7 @@ class BasePlugin {
     if (uuidCache[Player] && uuidCache[Player] != "00000000-0000-0000-0000-000000000000") return uuidCache[Player];
     if (this.newVersion) {
       uuidCache[Player] = this.ConvertUUID(
-        await this.CommandSender(
-          `data get entity @e[type=minecraft:player,limit=1,name="${Player}"] UUID`
-        )
+        await this.CommandSender(`data get entity @e[type=minecraft:player,limit=1,name="${Player}"] UUID`)
           .then(a => {
             return a
               .split(";")[1]
@@ -97,14 +95,17 @@ class BasePlugin {
         }
       }
     }
-    console.log(uuidCache)
+    console.log(uuidCache);
     return uuidCache[Player];
   }
   async CommandSender(cmd) {
     // this.PluginLog(`[${new Date().getTime()}]执行命令:`+arguments[0])
-    return this.Core.CommandSender.requestCommand(cmd).catch(() => { });
+    return this.Core.CommandSender.requestCommand(cmd).catch(() => {});
   }
   async tellraw(Dest, Json) {
+    if (!this.Core.Players.length) {
+      this.PluginLog("无玩家在线，忽略Tellraw");
+    }
     if (this.newVersion && !/@/.test(Dest)) {
       Dest = `@e[name="${Dest}",type=minecraft:player]`;
     }
@@ -161,9 +162,6 @@ class BasePlugin {
     }
     return NewScore;
   }
-  async updateScore() {
-    return this.Core.Scoreboard.updateScore(this);
-  }
   async getScoreByPlayer(Player) {
     return (await this.getAllScore())[Player];
   }
@@ -184,7 +182,7 @@ class BasePlugin {
     let Mapping = {};
     for (let [name, Func] of Object.entries(this.Core.Scoreboard)) {
       Mapping[name] = (...arg) => {
-        return Func(...arg, this);
+        return Func(this, ...arg);
       };
     }
     return Mapping;

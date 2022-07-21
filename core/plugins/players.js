@@ -16,13 +16,13 @@ class PlayerLists extends BasePlugin {
     });
   }
   async Start() {
-    this.LoopId = setInterval(() => {
+    /*this.LoopId = setInterval(() => {
       this.updatePlayerLists(false);
-    }, 10000);
+    }, 1000);*/
     return this.updatePlayerLists(true);
   }
   async Pause() {
-    clearInterval(this.LoopId);
+    //clearInterval(this.LoopId);
   }
   async updatePlayerLists(first) {
     let list = await this.CommandSender("list");

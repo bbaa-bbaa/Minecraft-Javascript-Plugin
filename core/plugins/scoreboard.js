@@ -10,6 +10,7 @@ class Scoreboard extends BasePlugin {
     });
     this.BoardList = {}; // name,type,displayname,pluginhash
     this.Scores = {};
+    this.lastSync = 0;
   }
   init(Plugin) {
     let requestUpdateScore = _.debounce(() => {
@@ -18,7 +19,7 @@ class Scoreboard extends BasePlugin {
       });
     }, 1000);
     this.Core.Scoreboard = {
-      ensureScoreboard: async (options, scope) => {
+      ensureScoreboard: async (scope, options) => {
         if (!this.newVersion) await this.waitForSync;
         if (!options.displayname) {
           options.displayname = options.name;
@@ -29,7 +30,8 @@ class Scoreboard extends BasePlugin {
             `${scope.constructor.PluginName} 注册了一个名为 ${options.displayname} 的 ${options.type} 记分板`
           );
           return this.CommandSender(
-            `scoreboard objectives add ${options.name} ${options.type} ${this.newVersion ? '"' + options.displayname + '"' : options.displayname
+            `scoreboard objectives add ${options.name} ${options.type} ${
+              this.newVersion ? '"' + options.displayname + '"' : options.displayname
             }`
           ).then(a => {
             if (this.newVersion) requestUpdateScore();
@@ -39,15 +41,15 @@ class Scoreboard extends BasePlugin {
         if (this.newVersion) requestUpdateScore();
         return Promise.resolve();
       },
-      displayScoreboard: async (name, type, scope) => {
+      displayScoreboard: async (scope, name, type) => {
         await this.waitForSync;
         name = this.getRealname(name, scope);
         return this.CommandSender(`scoreboard objectives setdisplay ${type} ${name}`);
       },
-      updateScore: async scope => {
-        return this.updateScore();
+      updateScore: async (scope, player, name) => {
+        return this.updateScore(scope, player, name);
       },
-      playerAction: async (Player, action, name, count, scope) => {
+      playerAction: async (scope, Player, action, name, count) => {
         await this.waitForSync;
         name = this.getRealname(name, scope);
         return this.CommandSender(`scoreboard players ${action} ${Player} ${name} ${count}`);
@@ -62,7 +64,7 @@ class Scoreboard extends BasePlugin {
     if (!this.newVersion) {
       this.CommandSender(`scoreboard objectives list`)
         .then(r => {
-          r = r.replace(/\n/g, "")
+          r = r.replace(/\n/g, "");
           let regexp = /- (\w+?):.displays as '(.*?)' and is type '(.*?)'/g;
           let item;
           while ((item = regexp.exec(r))) {
@@ -77,10 +79,12 @@ class Scoreboard extends BasePlugin {
         });
     }
   }
-  async updateScore() {
+  async updateScore(scope, player, name) {
     if (!this.newVersion) {
+      if (new Date().getTime() - this.lastSync < 10000) return;
       return this.CommandSender(`scoreboard players list *`).then(r => {
-        r = r.replace(/\n/g, "")
+        this.lastSync = new Date().getTime();
+        r = r.replace(/\n/g, "");
         r = r.replace(/Player \w+ has no scores recorded/g, "");
         let regexp = /Showing \d+ tracked objective\(s\) for (\w+):(.*?)(?=Showing|$)/g;
         let player;
@@ -96,32 +100,47 @@ class Scoreboard extends BasePlugin {
         }
       });
     } else {
-      this.PluginLog(`新版MC记分板备用同步方案,记录的记分板列表如下`);
-      const ScoreList = Object.keys(this.BoardList);
-      console.log(ScoreList);
-      this.PluginLog(`获取被跟踪的实体列表`);
-      return this.CommandSender("scoreboard players list").then(async a => {
-        if (!/There are \d tracked entities:\s?(.*)/.test(a)) return Promise.resolve();
-        let players = a
-          .match(/There are \d tracked entities:\s?(.*)/)[1]
-          .split(",")
-          .map(b => b.trim());
-        for (let i of players) {
-          this.Scores[i] = {};
-          for (let s of ScoreList) {
-            this.PluginLog(`正在获取玩家:${i} 的 ${s} 记分项`);
-            await this.CommandSender(`scoreboard players get ${i} ${s}`).then(c => {
-              if (!/^.*? has (\d+)/.test(c)) return Promise.resolve();
-              let score = Number(c.match(/^.*? has (\d+)/)[1]);
-              if (!isNaN(score)) {
-                this.Scores[i][s] = score;
-                this.PluginLog(`玩家:${i} 的 ${s} 记分项值为:${score}`);
-              }
-            });
+      if (name && player) {
+        name = this.getRealname(name, scope);
+        this.PluginLog(`正在获取玩家:${player} 的 ${name} 记分项`);
+        await this.CommandSender(`scoreboard players get ${player} ${name}`).then(c => {
+          if (!/^.*? has (\d+)/.test(c)) return Promise.resolve();
+          let score = Number(c.match(/^.*? has (\d+)/)[1]);
+          if (!isNaN(score)) {
+            this.Scores[player][name] = score;
+            this.PluginLog(`玩家:${player} 的 ${name} 记分项值为:${score}`);
           }
-        }
-        return Promise.resolve();
-      });
+        });
+      } else {
+        if (new Date().getTime() - this.lastSync < 10000) return;
+        this.PluginLog(`新版MC记分板备用同步方案,记录的记分板列表如下`);
+        const ScoreList = Object.keys(this.BoardList);
+        console.log(ScoreList);
+        this.PluginLog(`获取被跟踪的实体列表`);
+        return this.CommandSender("scoreboard players list").then(async a => {
+          if (!/There are \d tracked entities:\s?(.*)/.test(a)) return Promise.resolve();
+          let players = a
+            .match(/There are \d tracked entities:\s?(.*)/)[1]
+            .split(",")
+            .map(b => b.trim());
+          for (let i of players) {
+            this.Scores[i] = {};
+            for (let s of ScoreList) {
+              this.PluginLog(`正在获取玩家:${i} 的 ${s} 记分项`);
+              await this.CommandSender(`scoreboard players get ${i} ${s}`).then(c => {
+                if (!/^.*? has (\d+)/.test(c)) return Promise.resolve();
+                let score = Number(c.match(/^.*? has (\d+)/)[1]);
+                if (!isNaN(score)) {
+                  this.Scores[i][s] = score;
+                  this.PluginLog(`玩家:${i} 的 ${s} 记分项值为:${score}`);
+                }
+              });
+            }
+          }
+          this.lastSync = new Date().getTime();
+          return Promise.resolve();
+        });
+      }
     }
   }
 }

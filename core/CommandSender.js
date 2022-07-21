@@ -1,4 +1,4 @@
-let delay = 0;
+const delay = 0;
 const enableQuene = true;
 const process = require("process");
 class CommanderTask {
@@ -50,7 +50,7 @@ class CommandSender {
     });
   }
   tryRunNext() {
-    if (new Date().getTime() - this.lastRun > delay) {
+    if (new Date().getTime() - this.lastRun >= delay || !enableQuene) {
       if (this.Queue.length && this.paused) this.runNext();
     } else if (this.Queue.length && this.paused) {
       console.log(`[CommandSender]正在延迟执行捏:${delay - (new Date().getTime() - this.lastRun)} ms`);
@@ -69,7 +69,6 @@ class CommandSender {
     this.lastRun = new Date().getTime();
     this.paused = false;
     let curr = this.Queue.shift();
-
     this.CommandMapping.set(process.pid + "_" + curr.id, curr);
     console.log(`[CommandSender]正在执行[${curr.id}]：${curr.command} 队列中剩余:${this.Queue.length}`);
     curr.promise

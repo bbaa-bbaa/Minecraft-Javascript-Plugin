@@ -20,6 +20,8 @@ class QuickBackup extends BasePlugin {
     fs.ensureDir(this.backupDest);
     fs.ensureDir(this.wholeWorldDest);
     fs.ensureDir(this.PlayerDataDest);
+    this.lastBackup = new Date().getTime();
+    this.Backuping=false;
     this.backPending = {
       Timer: 0,
       choice: "",
@@ -511,6 +513,23 @@ class QuickBackup extends BasePlugin {
     this.cancelAllPending();
   }
   async RunBackup(comment) {
+    if(this.Backuping) {
+      this.PluginLog("已经在备份进程之中");
+      await this.tellraw(`@a`, [
+        { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+        { text: "已经在备份进程之中", color: "yellow" }
+      ]);
+      return
+    }
+    if(new Date().getTime()-this.lastBackup<60000) {
+      this.PluginLog("与上次备份间隔小于60秒，消除抖动忽略本次备份");
+      await this.tellraw(`@a`, [
+        { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+        { text: "已经在备份进程之中", color: "yellow" }
+      ]);
+      return
+    }
+    this.lastBackup = new Date().getTime();
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
     this.PluginLog(`[${moment().format("HH:mm:ss")}]运行备份 备注:${comment}`);
     let FileName = `${comment}.tar.zst`;

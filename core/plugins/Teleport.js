@@ -13,18 +13,24 @@ class Teleport extends BasePlugin {
   async Teleport(Source, Target, retry = 0) {
     if (this.newVersion) {
       if (this.Core.Players.indexOf(Target) > -1) {
-        Target = await this.getPlayerPosition(Target).catch(() => {
+        Target = await this.getPlayerPosition(Target).catch((a) => {
+          console.log("获取位置失败"+a)
           return "crash";
         });
         if (Target == "crash" && retry < 3) {
           return this.Teleport(Source, Target, ++retry);
         }
       }
-      this.CommandSender(`execute as ${this.PlayerWarpper(Source)} rotated as ${this.PlayerWarpper(Source)} in ${Target.dim} run teleport ${this.SelectorWarpper(Target)}`)
-    }
-    else {
+      if (Target.dim) {
+        await this.CommandSender(
+          `execute as ${this.PlayerWarpper(Source)} rotated as ${this.PlayerWarpper(Source)} in ${
+            Target.dim
+          } run teleport ${this.SelectorWarpper(Target)}`
+        );
+      }
+    } else {
       if (!this.isForge) {
-        this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => { });
+        this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
       } else {
         if (this.Core.Players.indexOf(Target) > -1) {
           Target = await this.getPlayerPosition(Target).catch(() => {
