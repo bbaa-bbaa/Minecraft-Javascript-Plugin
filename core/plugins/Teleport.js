@@ -4,6 +4,7 @@ class Teleport extends BasePlugin {
   static PluginName = "传送内核插件";
   constructor() {
     super(...arguments);
+    this.lastTeleport = 0;
   }
   init(Plugin) {
     this.Core.Teleport = async (Source, Target) => {
@@ -11,22 +12,57 @@ class Teleport extends BasePlugin {
     };
   }
   async Teleport(Source, Target, retry = 0) {
-    if (this.newVersion) {
-      if (this.Core.Players.indexOf(Target) > -1) {
-        Target = await this.getPlayerPosition(Target).catch((a) => {
-          console.log("获取位置失败"+a)
-          return "crash";
-        });
-        if (Target == "crash" && retry < 3) {
-          return this.Teleport(Source, Target, ++retry);
-        }
+    if (this.MSPT > 35) {
+      this.tellraw(this.SelectorWarpper(Source), [{ text: "服务器状态异常，本次TP取消", color: "red", bold: true }]);
+      if (typeof Target != "object") {
+        this.tellraw(this.SelectorWarpper(Target), [{ text: "服务器状态异常，本次TP取消", color: "red", bold: true }]);
       }
-      if (Target.dim) {
-        await this.CommandSender(
-          `execute as ${this.PlayerWarpper(Source)} rotated as ${this.PlayerWarpper(Source)} in ${
-            Target.dim
-          } run teleport ${this.SelectorWarpper(Target)}`
-        );
+      return;
+    }
+    if (!retry) {
+      if (new Date().getTime() - this.lastTeleport < 10000) {
+        this.tellraw(this.SelectorWarpper(Source), [
+          { text: "与上次TP间隔过短，本次TP取消", color: "red", bold: true }
+        ]);
+        if (typeof Target != "object") {
+          this.tellraw(this.SelectorWarpper(Target), [
+            { text: "与上次TP间隔过短，本次TP取消", color: "red", bold: true }
+          ]);
+        }
+        return;
+      }
+      this.lastTeleport = new Date().getTime();
+    }
+    if (this.newVersion) {
+      let ret = "";
+      if (!retry && typeof Target != "object") {
+        this.PluginLog("尝试非跨世界tp");
+        ret = await this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+      }
+      if (ret.substring(0, "Teleported".length) != "Teleported" || retry > 0) {
+        this.PluginLog("跨世界tp");
+        if (typeof Target != "object") {
+          Target = await this.getPlayerPosition(Target).catch(a => {
+            console.log("获取位置失败" + a);
+            return "crash";
+          });
+          if (Target == "crash" && retry < 3) {
+            return this.Teleport(Source, Target, ++retry);
+          }
+        }
+        if (Target.dim) {
+          await this.CommandSender(
+            `execute as ${this.PlayerWarpper(Source)} rotated as ${this.PlayerWarpper(Source)} in ${
+              Target.dim
+            } run teleport ${this.SelectorWarpper(Target)}`
+          );
+        } else if (!Target.dim) {
+          await this.CommandSender(
+            `execute as ${this.PlayerWarpper(Source)} rotated as ${this.PlayerWarpper(
+              Source
+            )} run teleport ${this.SelectorWarpper(Target)}`
+          );
+        }
       }
     } else {
       if (!this.isForge) {
