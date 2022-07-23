@@ -183,7 +183,7 @@ const GameManager = {
       !/\w+ (left|joined) the game/.test(message)
     ) {
       if (this.CurrCommand.timer) clearTimeout(this.CurrCommand.timer);
-      let match = /\[.*?DedicatedServer.*?\]:(.*)$/.exec(message);
+      let match = /\[.*?DedicatedServer.*?\]: (.*)$/.exec(message);
 
       if (match[1]) {
         console.log(
@@ -192,7 +192,7 @@ const GameManager = {
             colors.green(`的输出储存为:`) +
             colors.yellow(match[1])
         );
-        this.CurrCommand.buffer.push(match[1]);
+        this.CurrCommand.buffer.push(match[1].trim());
         this.CurrCommand.timer = setTimeout(() => {
           return this.FinishCommand();
         }, waitMessage);

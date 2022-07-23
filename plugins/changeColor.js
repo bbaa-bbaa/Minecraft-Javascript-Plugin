@@ -75,7 +75,7 @@ class ChangeColor extends BasePlugin {
       `data get entity @e[type=minecraft:player,limit=1,name='${Player}'] SelectedItem`
     );
     basenbt = nbttool.parse(rawNbt.substring(rawNbt.indexOf(":") + 1).trim());
-    console.log(basenbt)
+    //console.log(basenbt)
     let Tag = basenbt.tag;
     let FormatArray = [];
     try {

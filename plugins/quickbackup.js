@@ -20,7 +20,7 @@ class QuickBackup extends BasePlugin {
     fs.ensureDir(this.backupDest);
     fs.ensureDir(this.wholeWorldDest);
     fs.ensureDir(this.PlayerDataDest);
-    this.lastBackup = new Date().getTime();
+    this.lastBackup = 0;
     this.Backuping=false;
     this.backPending = {
       Timer: 0,
@@ -416,6 +416,13 @@ class QuickBackup extends BasePlugin {
   async showPage(page = 0, list = "wholeWorld", command) {
     if (!command) {
       command = this.Pending;
+      if(!this.Pending) {
+        await this.tellraw(`@a`, [
+          { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+          { text: "该回档请求已经过期，请重新请求回档", color: "red" }
+        ]);
+        return
+      }
     }
     this.PluginLog(``, list, command);
     let List = this.getBackupList(list);
@@ -468,7 +475,7 @@ class QuickBackup extends BasePlugin {
       this.PluginLog(`清空World文件夹`);
       await fs.emptyDir(this.SaveSource);
       this.PluginLog(`释放存档`);
-      await runCommand(`tar --zstd -xvf ${backfile.path} -C ${this.SaveSource}`);
+      await runCommand(`fish -c 'tar --zstd -xvf ${backfile.path} -C ${this.SaveSource}'`);
       this.PluginLog(`启动服务器`);
       this.Core.PendingRestart = true;
       this.PluginLog(`完成`);
@@ -566,7 +573,7 @@ class QuickBackup extends BasePlugin {
     ) {
       // do notings
     }
-    let a = await runCommand(`tar --zstd -cvf ../${FileName} *`, { cwd: `${this.tmpDir}/Minecraft/world` });
+    let a = await runCommand(`fish -c 'tar --zstd -cvf ../${FileName} *'`, { cwd: `${this.tmpDir}/Minecraft/world` });
     await fs.emptyDir(`${this.tmpDir}/Minecraft/world`);
     let Stat = fs.statSync(Path);
     let Size = Stat.size / 1048576;
