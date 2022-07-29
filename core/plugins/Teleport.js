@@ -12,15 +12,16 @@ class Teleport extends BasePlugin {
     };
   }
   async Teleport(Source, Target, retry = 0) {
-    if (this.MSPT > 35) {
-      this.tellraw(this.SelectorWarpper(Source), [{ text: "服务器状态异常，本次TP取消", color: "red", bold: true }]);
-      if (typeof Target != "object") {
-        this.tellraw(this.SelectorWarpper(Target), [{ text: "服务器状态异常，本次TP取消", color: "red", bold: true }]);
-      }
+    if (this.MSPT > 50) {
+      this.tellraw("@a", [
+        { text: "服务器状态异常，本次TP取消 ", color: "red", bold: true },
+        { text: "服务器负载：", color: "yellow", bold: true },
+        { text: `${((this.MSPT / 50) * 100).toFixed(2)}%`, color: "red", bold: true }
+      ]);
       return;
     }
     if (!retry) {
-      if (new Date().getTime() - this.lastTeleport < 10000) {
+      if (new Date().getTime() - this.lastTeleport < 5000) {
         this.tellraw(this.SelectorWarpper(Source), [
           { text: "与上次TP间隔过短，本次TP取消", color: "red", bold: true }
         ]);

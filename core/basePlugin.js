@@ -141,7 +141,9 @@ class BasePlugin {
         }
       } else {
         Item.text = Item.text.toString();
-        newJson[newJson.length - 1].push(Item);
+        if (Item.text.trim()) {
+          newJson[newJson.length - 1].push(Item);
+        }
       }
     }
     for (let msg of newJson) {
@@ -162,7 +164,7 @@ class BasePlugin {
     }
     return NewScore;
   }
-  get MSPT(){
+  get MSPT() {
     return this.Core.PluginInterfaces.get("Status").LastMspt;
   }
   async getScoreByPlayer(Player) {

@@ -43,6 +43,7 @@ class CommandSender {
     }
   }
   async requestCommand(command, strict = false) {
+    command = command.replace(/\n/g,"");
     return new Promise((resolve, reject) => {
       const Task = new CommanderTask(command, this.CommandIndex++, resolve, reject, strict);
       this.Queue.push(Task);

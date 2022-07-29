@@ -13,7 +13,8 @@ class QuickBackup extends BasePlugin {
     super(...arguments);
     this.schedule = null;
     this.backupDest = "/data/mcBackup/mc118";
-    this.tmpDir = `/data/mcBackup/tmp`
+    this.tmpDir = `/data/mcBackup/tmp`;
+    this.onlyCopy = true;
     this.wholeWorldDest = this.backupDest + "/World";
     this.PlayerDataDest = this.backupDest + "/Playerdata";
     this.SaveSource = `${this.Core.BaseDir}/world`;
@@ -21,7 +22,7 @@ class QuickBackup extends BasePlugin {
     fs.ensureDir(this.wholeWorldDest);
     fs.ensureDir(this.PlayerDataDest);
     this.lastBackup = 0;
-    this.Backuping=false;
+    this.Backuping = false;
     this.backPending = {
       Timer: 0,
       choice: "",
@@ -42,12 +43,12 @@ class QuickBackup extends BasePlugin {
       choice: ""
     };
     this.Pending = "";
-    this.Rollbacking=false;
+    this.Rollbacking = false;
   }
   init(Plugin) {
     Plugin.registerCommand("qb", this.Cli);
     this.Core.EventBus.on("playerlistchange", List => {
-      if (List == 0&&!this.Rollbacking) {
+      if (List == 0 && !this.Rollbacking) {
         this.RunBackup(`自动备份-玩家离开-${moment().format("YY-MM-DD-HH-mm-ss")}`);
       }
     });
@@ -391,16 +392,27 @@ class QuickBackup extends BasePlugin {
       choice: ""
     };
     this.Pending = "";
-    this.Rollbacking=false;
+    this.Rollbacking = false;
   }
   getBackupList(list) {
+    let BackupList;
     if (list == "wholeWorld") {
-      let BackupList = klawSync(this.wholeWorldDest, {
-        nodir: true
-      }).map(a => {
-        a.filename = path.parse(a.path).base.split(".")[0];
-        return a;
-      });
+      if (!this.onlyCopy) {
+        BackupList = klawSync(this.wholeWorldDest, {
+          nodir: true
+        }).map(a => {
+          a.filename = path.parse(a.path).base.split(".")[0];
+          return a;
+        });
+      } else {
+        BackupList = klawSync(this.wholeWorldDest, {
+          nofile: true,
+          depthLimit: 0
+        }).map(a => {
+          a.filename = path.parse(a.path).base.split(".")[0];
+          return a;
+        });
+      }
       return BackupList.sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
     } else if (list == "playerData") {
       let BackupList = klawSync(this.PlayerDataDest, {
@@ -416,12 +428,12 @@ class QuickBackup extends BasePlugin {
   async showPage(page = 0, list = "wholeWorld", command) {
     if (!command) {
       command = this.Pending;
-      if(!this.Pending) {
+      if (!this.Pending) {
         await this.tellraw(`@a`, [
           { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
           { text: "该回档请求已经过期，请重新请求回档", color: "red" }
         ]);
-        return
+        return;
       }
     }
     this.PluginLog(``, list, command);
@@ -466,7 +478,7 @@ class QuickBackup extends BasePlugin {
   }
   async RunBack(backfile) {
     this.PluginLog(`[${moment().format("HH:mm:ss")}]回档 备注:${backfile.filename}`);
-    this.Rollbacking=true;
+    this.Rollbacking = true;
     this.schedule.cancel();
     this.schedule2.cancel();
     await this.CommandSender("stop");
@@ -474,8 +486,13 @@ class QuickBackup extends BasePlugin {
     setTimeout(async () => {
       this.PluginLog(`清空World文件夹`);
       await fs.emptyDir(this.SaveSource);
-      this.PluginLog(`释放存档`);
-      await runCommand(`fish -c 'tar --zstd -xvf ${backfile.path} -C ${this.SaveSource}'`);
+      if (!this.onlyCopy) {
+        this.PluginLog(`释放存档`);
+        await runCommand(`fish -c 'tar --zstd -xvf ${backfile.path} -C ${this.SaveSource}'`);
+      } else {
+        this.PluginLog(`复制存档`);
+        await runCommand(`fish -c 'cp -r "${backfile.path}/." "${this.SaveSource}"'`);
+      }
       this.PluginLog(`启动服务器`);
       this.Core.PendingRestart = true;
       this.PluginLog(`完成`);
@@ -486,7 +503,7 @@ class QuickBackup extends BasePlugin {
   async RunBackPd(backfile) {
     this.PluginLog(`[${moment().format("HH:mm:ss")}]回档-仅玩家数据 备注:${backfile.filename}`);
     this.PluginLog(`请求者信息:${JSON.stringify(this.backpdPending.requester)}`);
-    this.Rollbacking=true;
+    this.Rollbacking = true;
     await this.CommandSender("kick " + this.backpdPending.requester.name + " 正在准备回档");
     await this.CommandSender("ban " + this.backpdPending.requester.name + " 正在回档");
     setTimeout(async () => {
@@ -499,7 +516,9 @@ class QuickBackup extends BasePlugin {
         nodir: true
       }).map(a => a.path.replace(new RegExp(`^${backfile.path}/`), ""));
       for (let file of fileList) {
-        await fs.copy(`${backfile.path}/${file}`, `${this.SaveSource}/${file}`).catch(e => console.error(e));
+        await fs.copy(`${backfile.path}/${file}`, `${this.SaveSource}/${file}`, {
+          preserveTimestamps: true
+        }).catch(e => console.error(e));
       }
       this.PluginLog(`完成`);
       await this.CommandSender("pardon " + this.backpdPending.requester.name);
@@ -520,26 +539,26 @@ class QuickBackup extends BasePlugin {
     this.cancelAllPending();
   }
   async RunBackup(comment) {
-    if(this.Backuping) {
+    if (this.Backuping) {
       this.PluginLog("已经在备份进程之中");
       await this.tellraw(`@a`, [
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "已经在备份进程之中", color: "yellow" }
       ]);
-      return
+      return;
     }
-    if(new Date().getTime()-this.lastBackup<60000) {
-      this.PluginLog("与上次备份间隔小于60秒，消除抖动忽略本次备份");
+    if (new Date().getTime() - this.lastBackup < 600000) {
+      this.PluginLog("与上次备份间隔小于600秒，消除抖动忽略本次备份");
       await this.tellraw(`@a`, [
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: "已经在备份进程之中", color: "yellow" }
       ]);
-      return
+      return;
     }
     this.lastBackup = new Date().getTime();
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
     this.PluginLog(`[${moment().format("HH:mm:ss")}]运行备份 备注:${comment}`);
-    let FileName = `${comment}.tar.zst`;
+    let FileName = this.onlyCopy ? `${comment}` : `${comment}.tar.zst`;
     let Path = `${this.tmpDir}/Minecraft/${FileName}`;
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
@@ -555,43 +574,57 @@ class QuickBackup extends BasePlugin {
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "存档保存成功", color: "green" }
     ]);
-    await this.tellraw(`@a`, [
-      { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
-      { text: "正在打包存档", color: "yellow" }
-    ]);
-    await fs.ensureDir(`${this.tmpDir}/Minecraft/world`);
-    let CleanList = fs.readdirSync(`${this.tmpDir}/Minecraft`).filter(a => /tar\.zst/.test(a));
-    for (let Item of CleanList) {
-      await fs.promises.unlink(`${this.tmpDir}/Minecraft/` + Item);
+    if (this.onlyCopy) {
+      await fs.ensureDir(`${this.wholeWorldDest}/${FileName}`);
+      let a = await runCommand(`fish -c 'cp -r "${this.SaveSource}/." "${this.wholeWorldDest}/${FileName}"'`, {});
+      let size =
+        Number((await runCommand(`fish -c 'du -d 0 "${this.wholeWorldDest}/${FileName}"'`)).stdout.split("\t")[0]) /
+        1024;
+      await this.tellraw(`@a`, [
+        { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+        { text: `存档复制完成 存档大小：`, color: "aqua" },
+        { text: `${size.toFixed(2)}M`, color: "green", bold: true }
+      ]);
+    } else {
+      await this.tellraw(`@a`, [
+        { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+        { text: "正在打包存档", color: "yellow" }
+      ]);
+      await fs.ensureDir(`${this.tmpDir}/Minecraft/world`);
+      let CleanList = fs.readdirSync(`${this.tmpDir}/Minecraft`).filter(a => /tar\.zst/.test(a));
+      for (let Item of CleanList) {
+        await fs.promises.unlink(`${this.tmpDir}/Minecraft/` + Item);
+      }
+      await fs.emptyDir(`${this.tmpDir}/Minecraft/world`);
+      while (
+        await fs
+          .copy(this.SaveSource, `${this.tmpDir}/Minecraft/world`, {
+            preserveTimestamps: true
+          })
+          .then(a => false)
+          .catch(a => true)
+      ) {
+        // do notings
+      }
+      let a = await runCommand(`fish -c 'tar --zstd -cvf ../${FileName} *'`, { cwd: `${this.tmpDir}/Minecraft/world` });
+      await fs.emptyDir(`${this.tmpDir}/Minecraft/world`);
+      let Stat = fs.statSync(Path);
+      let Size = Stat.size / 1048576;
+      await this.tellraw(`@a`, [
+        { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+        { text: "存档打包完成 存档大小:", color: "green" },
+        { text: `${Size.toFixed(2)}M`, color: "yellow", bold: true }
+      ]);
+      await this.tellraw(`@a`, [
+        { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+        { text: "正在上传存档到备份服务器", color: "yellow" }
+      ]);
+      await fs.move(Path, `${this.wholeWorldDest}/${FileName}`);
+      await this.tellraw(`@a`, [
+        { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
+        { text: "存档上传成功", color: "green" }
+      ]);
     }
-    await fs.emptyDir(`${this.tmpDir}/Minecraft/world`);
-    while (
-      await fs
-        .copy(this.SaveSource, `${this.tmpDir}/Minecraft/world`)
-        .then(a => false)
-        .catch(a => true)
-    ) {
-      // do notings
-    }
-    let a = await runCommand(`fish -c 'tar --zstd -cvf ../${FileName} *'`, { cwd: `${this.tmpDir}/Minecraft/world` });
-    await fs.emptyDir(`${this.tmpDir}/Minecraft/world`);
-    let Stat = fs.statSync(Path);
-    let Size = Stat.size / 1048576;
-    await this.tellraw(`@a`, [
-      { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
-      { text: "存档打包完成 存档大小:", color: "green" },
-      { text: `${Size.toFixed(2)}M`, color: "yellow", bold: true }
-    ]);
-    await this.tellraw(`@a`, [
-      { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
-      { text: "正在上传存档到备份服务器", color: "yellow" }
-    ]);
-    await fs.move(Path, `${this.wholeWorldDest}/${FileName}`);
-    await this.tellraw(`@a`, [
-      { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
-      { text: "存档上传成功", color: "green" }
-    ]);
-
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
       { text: "备份进程结束", color: "yellow" }
@@ -613,22 +646,36 @@ class QuickBackup extends BasePlugin {
     for (let sourcename of [`playerdata`, `advancements`, `stats`]) {
       await fs.ensureDir(`${this.PlayerDataDest}/${FileName}/${sourcename}/`).catch(e => console.error(e));
       await fs
-        .copy(`${this.SaveSource}/${sourcename}/`, `${this.PlayerDataDest}/${FileName}/${sourcename}/`)
+        .copy(`${this.SaveSource}/${sourcename}/`, `${this.PlayerDataDest}/${FileName}/${sourcename}/`, {
+          preserveTimestamps: true
+        })
         .catch(e => console.error(e));
     }
     this.PluginLog(`[${moment().format("HH:mm:ss")}]完成玩家数据备份`);
   }
-  Start() {
+  async Start() {
     this.schedule = schedule.scheduleJob("0 30 * * * *", async () => {
       if (this.Core.Players.length) {
-        let ServerFile = klawSync(this.wholeWorldDest, {
-          nodir: true
-        })
-          .filter(a => /自动备份-/.test(a.path))
-          .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
-        for (let File of ServerFile.slice(24)) {
-          if (new Date().getTime() - File.stats.mtimeMs > 86400000) {
-            await fs.unlink(File.path);
+        if (!this.onlyCopy) {
+          let ServerFile = klawSync(this.wholeWorldDest, {
+            nodir: true
+          })
+            .filter(a => /自动备份-/.test(a.path))
+            .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+          for (let File of ServerFile.slice(24)) {
+            if (new Date().getTime() - File.stats.mtimeMs > 86400000) {
+              await fs.unlink(File.path);
+            }
+          }
+        } else {
+          let ServerFile = await fs.promises.readdir(this.wholeWorldDest);
+          ServerFile = ServerFile.filter(a => /自动备份-/.test(a.path))
+            .map(a => ({ stats: fs.promises.stat(this.wholeWorldDest + "/" + a), path: this.wholeWorldDest + "/" + a }))
+            .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+          for (let File of ServerFile.slice(24)) {
+            if (new Date().getTime() - File.stats.mtimeMs > 86400000) {
+              await runCommand(`fish -c 'rm -rf "${File.path}"'`);
+            }
           }
         }
         this.RunBackup(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`)

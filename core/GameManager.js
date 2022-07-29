@@ -33,6 +33,7 @@ const GameManager = {
   _ReadyWaitId: 0,
   CurrCommand: null,
   async requestCommand(command) {
+    command = command.replace(/\n/g,"");
     return new Promise((resolve, reject) => {
       this.CommandQueue.push(new CommanderTask(command, resolve, reject));
       this.tryRunNextCommand();
