@@ -88,11 +88,10 @@ class Status extends BasePlugin {
     if(!this.isForge) return
     this.CommandSender("forge tps")
       .then(async statustext => {
-        let re = this.newVersion ? /(?:Dim | )+(.*?)[ ]?(?:\(.*?\))?: Mean tick time:.(.*?).ms.*?TPS:.(.{6})/g : /.*?(\(.*?\)|Overall).:.*?tick time:.(.*?).ms.*?TPS:.(.{6})/g;
+        let re = this.newVersion ? /(?:Dim )?(.*?)[ ]?(?:\(.*?\))?: Mean tick time:.(.*?).ms.*?TPS:.(.{6})/g : /.*?(\(.*?\)|Overall).:.*?tick time:.(.*?).ms.*?TPS:.(.{6})/g;
         let worldStatus;
         while ((worldStatus = re.exec(statustext))) {
           let [Source, World, MSPT, TPS] = worldStatus;
-         // console.log(World, MSPT, TPS)
           World = this.newVersion ? World : World.replace(/[\(\)]/g, "");
           MSPT = Number(MSPT);
           TPS = Math.min(20, 1000 / MSPT).toFixed(2);

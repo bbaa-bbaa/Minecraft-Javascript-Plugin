@@ -25,7 +25,7 @@ class Home extends BasePlugin {
   }
   async sethome(Player, homename = "default") {
     let { pos, dim } = await this.getPlayerPosition(Player);
-    console.log(pos,dim)
+    console.log(pos, dim);
     this.tellraw(Player, [
       { text: "已在", color: "yellow" },
       { text: `维度[${this.getWorldName(dim)}]的[${pos.join(", ")}]`, color: "green" },
@@ -55,9 +55,13 @@ class Home extends BasePlugin {
       }
       return this.tellraw(
         Player,
-        [{ text: `你拥有家: `, color: "yellow" }].concat(
+        [{ text: `你拥有家[以下选项可点击]: `, color: "yellow" }].concat(
           Homes.map((a, i) => {
-            return { text: a + " ", color: Colors[i % Colors.length] };
+            return {
+              text: a + " ",
+              color: Colors[i % Colors.length],
+              clickEvent: { action: "suggest_command", value: `!!home ${a}` }
+            };
           })
         )
       );
@@ -66,15 +70,15 @@ class Home extends BasePlugin {
     }
   }
   async home(Player, homename = "default") {
-    if (HomeData[Player]&&HomeData[Player][homename]) {
+    if (HomeData[Player] && HomeData[Player][homename]) {
       this.tellraw(Player, [{ text: `两秒后tp回家 ${homename}`, color: "yellow" }]);
       setTimeout(() => {
-        this.Teleport(Player, HomeData[Player][homename])
+        this.Teleport(Player, HomeData[Player][homename]);
       }, 2000);
     } else {
       this.tellraw(Player, [{ text: `没有设置家 ${homename}`, color: "red" }]);
     }
   }
-  async Start() { }
+  async Start() {}
 }
 module.exports = Home;
