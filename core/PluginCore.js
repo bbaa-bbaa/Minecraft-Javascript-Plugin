@@ -114,6 +114,9 @@ class PluginCore {
           this.ipc.of.GM.emit("state")
           break;
         case "stop":
+          if(this.PendingRestart) {
+            this.PendingRestart=false;
+          }
           console.log(`[PluginsCore:IPC]启动服务器`)
           this.ipc.of.GM.emit("startServer");
           break;
@@ -150,7 +153,9 @@ class PluginCore {
     for (let Plugin of this.PluginInterfaces.values()) {
       if (Plugin._state == "Started") continue;
       if (Plugin.Start) {
+        console.log(`[PluginsCore]请求初始化 ${Plugin.constructor.PluginName}`);
         Plugin.Start.call(Plugin);
+
       }
       Plugin._state = "Started";
     }

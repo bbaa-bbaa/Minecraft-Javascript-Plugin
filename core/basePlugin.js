@@ -95,7 +95,6 @@ class BasePlugin {
         }
       }
     }
-    console.log(uuidCache);
     return uuidCache[Player];
   }
   async CommandSender(cmd) {
