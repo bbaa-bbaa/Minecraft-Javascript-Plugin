@@ -12,7 +12,7 @@ class Teleport extends BasePlugin {
     };
   }
   async Teleport(Source, Target, retry = 0) {
-    if (this.MSPT > 50) {
+    if (this.MSPT > 55) {
       this.tellraw("@a", [
         { text: "服务器状态异常，本次TP取消 ", color: "red", bold: true },
         { text: "服务器负载：", color: "yellow", bold: true },
