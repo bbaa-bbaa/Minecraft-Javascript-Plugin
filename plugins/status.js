@@ -20,7 +20,7 @@ class Status extends BasePlugin {
       try {
         let Num = Number(log.match(/\[Server thread\/INFO\].*?\<.*?\>\s([+-\d]+)\s*$/)[1]);
         this.CommandSender(`me ${Num + 1}`);
-      } catch (e) { }
+      } catch (e) {}
     });
     setInterval(async () => {
       si.networkStats(await si.networkInterfaceDefault()).then(data => {
@@ -56,8 +56,8 @@ class Status extends BasePlugin {
                 Number(la / this.Info.cpu.length) < 0.4
                   ? "green"
                   : Number(la / this.Info.cpu.length) < 0.6
-                    ? "yellow"
-                    : "red"
+                  ? "yellow"
+                  : "red"
             }
           ];
         })
@@ -84,11 +84,22 @@ class Status extends BasePlugin {
         { text: `${(this.Info.network.rx / 1024).toFixed(2)}KB/s↓   `, color: "green" },
         { text: `${(this.Info.network.tx / 1024).toFixed(2)}KB/s↑`, color: "green" }
       ]);
+      if (this.Core.PluginInterfaces.has("DynView")) {
+        let DynView = this.Core.PluginInterfaces.get("DynView");
+        this.tellraw("@a", [
+          { text: "当前服务器视野距离为: ", color: "yellow" },
+          { text: DynView.CView, bold: true, color: "aqua" },
+          { text: " 模拟距离为: ", color: "yellow" },
+          { text: DynView.SimView, bold: true, color: "aqua" }
+        ]);
+      }
     }
-    if(!this.isForge) return
+    if (!this.isForge) return;
     this.CommandSender("forge tps")
       .then(async statustext => {
-        let re = this.newVersion ? /(?:Dim )?(.*?)[ ]?(?:\(.*?\))?: Mean tick time:.(.*?).ms.*?TPS:.(.{6})/g : /.*?(\(.*?\)|Overall).:.*?tick time:.(.*?).ms.*?TPS:.(.{6})/g;
+        let re = this.newVersion
+          ? /(?:Dim )?(.*?)[ ]?(?:\(.*?\))?: Mean tick time:.(.*?).ms.*?TPS:.(.{6})/g
+          : /.*?(\(.*?\)|Overall).:.*?tick time:.(.*?).ms.*?TPS:.(.{6})/g;
         let worldStatus;
         while ((worldStatus = re.exec(statustext))) {
           let [Source, World, MSPT, TPS] = worldStatus;
@@ -147,7 +158,7 @@ class Status extends BasePlugin {
           ]);
         }
       })
-      .catch(() => { });
+      .catch(() => {});
   }
   Start() {
     if (this.isForge) {

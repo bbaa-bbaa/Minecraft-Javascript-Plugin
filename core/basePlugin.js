@@ -164,7 +164,11 @@ class BasePlugin {
     return NewScore;
   }
   get MSPT() {
-    return this.Core.PluginInterfaces.get("Status").LastMspt;
+    if (this.Core.PluginInterfaces.has("Status")) {
+      return this.Core.PluginInterfaces.get("Status").LastMspt;
+    } else {
+      return 25;
+    }
   }
   async getScoreByPlayer(Player) {
     return (await this.getAllScore())[Player];
