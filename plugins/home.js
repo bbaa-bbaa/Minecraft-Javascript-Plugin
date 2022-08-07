@@ -25,7 +25,6 @@ class Home extends BasePlugin {
   }
   async sethome(Player, homename = "default") {
     let { pos, dim } = await this.getPlayerPosition(Player);
-    console.log(pos, dim);
     this.tellraw(Player, [
       { text: "已在", color: "yellow" },
       { text: `维度[${this.getWorldName(dim)}]的[${pos.join(", ")}]`, color: "green" },
