@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const uuid = require("uuid").stringify;
+const colors = require("@colors/colors");
 let uuidCache = {};
 const nbttool = require("nbt-ts");
 class BasePlugin {
@@ -42,7 +43,7 @@ class BasePlugin {
     return { pos, dim };
   }
   PluginLog(t) {
-    console.log(`[${this.constructor.PluginName}]` + t);
+    console.log(`${colors.yellow("[")}${colors.green(this.constructor.PluginName)}${colors.yellow("]")}` + colors.magenta(t));
   }
   getWorldName(a) {
     if (this.newVersion) {

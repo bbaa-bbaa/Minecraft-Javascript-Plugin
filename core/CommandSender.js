@@ -1,6 +1,7 @@
 const delay = 0;
 const enableQuene = true;
 const process = require("process");
+const colors = require("@colors/colors");
 class CommanderTask {
   constructor(command, id, resolve, reject, strict) {
     this.command = command;
@@ -38,12 +39,16 @@ class CommandSender {
     if (this.CommandMapping.has(id)) {
       let curr = this.CommandMapping.get(id);
       this.CommandMapping.delete(id);
-      //console.log(`[CommandSender]命令[${curr.id}]：${curr.Command} 结果:${result}`)
+      console.log(
+        `${colors.yellow("[")}${colors.green("CommandSender")}${colors.yellow("]命令[")}${colors.red(
+          curr.id
+        )}${colors.yellow("]：")}${colors.magenta(curr.command)} ${colors.blue("结果:")}\n${colors.green(result)}`
+      );
       curr.resolve(result);
     }
   }
   async requestCommand(command, strict = false) {
-    command = command.replace(/\n/g,"");
+    command = command.replace(/\n/g, "");
     return new Promise((resolve, reject) => {
       const Task = new CommanderTask(command, this.CommandIndex++, resolve, reject, strict);
       this.Queue.push(Task);
@@ -54,7 +59,11 @@ class CommandSender {
     if (new Date().getTime() - this.lastRun >= delay || !enableQuene) {
       if (this.Queue.length && this.paused) this.runNext();
     } else if (this.Queue.length && this.paused) {
-      console.log(`[CommandSender]正在延迟执行捏:${delay - (new Date().getTime() - this.lastRun)} ms`);
+      console.log(
+        `${colors.yellow("[")}${colors.green("CommandSender")}${colors.yellow("]")}${colors.yellow(
+          "正在延迟执行捏:"
+        )}${colors.red(delay - (new Date().getTime() - this.lastRun))}${colors.red(` ms`)}`
+      );
       this.paused = false;
       this.TimerId = setTimeout(this.runNext.bind(this), delay - (new Date().getTime() - this.lastRun));
     }
@@ -71,7 +80,13 @@ class CommandSender {
     this.paused = false;
     let curr = this.Queue.shift();
     this.CommandMapping.set(process.pid + "_" + curr.id, curr);
-    console.log(`[CommandSender]正在执行[${curr.id}]：${curr.command} 队列中剩余:${this.Queue.length}`);
+    console.log(
+      `${colors.yellow("[")}${colors.green("CommandSender")}${colors.yellow("]正在执行[")}${colors.red(
+        curr.id
+      )}${colors.yellow("]：")}${colors.magenta(curr.command)}${colors.yellow(" 队列中剩余:")}${colors.red(
+        this.Queue.length
+      )}`
+    );
     curr.promise
       .catch(e => {
         curr.reject(e);
@@ -81,7 +96,11 @@ class CommandSender {
         if (!enableQuene) return;
         if (this.Queue.length) {
           if (delay) {
-            console.log(`[CommandSender]正在延迟执行捏:${delay} ms`);
+            console.log(
+              `${colors.yellow("[")}${colors.green("CommandSender")}${colors.yellow("]")}${colors.yellow(
+                "正在延迟执行捏:"
+              )}${colors.red(delay)}${colors.red(` ms`)}`
+            );
             this.TimerId = setTimeout(this.runNext.bind(this), delay);
           } else {
             return this.runNext();

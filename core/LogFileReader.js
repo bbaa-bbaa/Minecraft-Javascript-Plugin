@@ -1,6 +1,7 @@
 const fs = require("fs");
 const _ = require("lodash");
 const chokidar = require("chokidar");
+const colors = require("@colors/colors");
 class LogFileReader {
   constructor(Core, path) {
     this.Handle = null;
@@ -20,7 +21,11 @@ class LogFileReader {
       ).size
     };
     let diff = curr.size - this.Pos;
-    console.log(`[PluginsCore:LogFileReader]读取日志文件${diff}:${this.Pos}->${curr.size}`);
+    console.log(
+      `${colors.yellow("[")}${colors.green("PluginsCore:LogFileReader")}${colors.yellow("]读取日志文件")}${colors.red(
+        diff
+      )}:${colors.green(this.Pos)}${colors.blue("->")}${colors.magenta(curr.size)}`
+    );
     if (diff < 0) {
       await this.closeLogFile();
       await this.openLogFile("LogFileUpdate");
@@ -31,7 +36,7 @@ class LogFileReader {
       return;
     }
     this.Handle.read(Buffer.alloc(diff), 0, diff, this.Pos)
-      .then(({ bytesRead,buffer }) => {
+      .then(({ bytesRead, buffer }) => {
         this.Pos = curr.size;
         let Lines = buffer.toString("utf8").split("\n");
         for (let Line of Lines) {
@@ -46,7 +51,11 @@ class LogFileReader {
       });
   }
   async watchLogfile() {
-    console.log("[PluginsCore:LogFileReader]在[" + this.path + "]注册文件监听器");
+    console.log(
+      `${colors.yellow("[")}${colors.green("PluginsCore:LogFileReader")}${colors.yellow("]在[")}` +
+        colors.magenta(this.path) +
+        colors.yellow("]注册文件监听器")
+    );
     this.ac = new AbortController();
     const readFilef = _.debounce(this.readPartFile.bind(this), 100);
     try {
@@ -63,18 +72,23 @@ class LogFileReader {
           return { size: 0 };
         })
       ).size;
-      console.log(`[${r}]打开日志 位移` + this.Pos);
+      console.log(
+        `${colors.yellow("[")}${colors.green("PluginsCore:LogFileReader/" + r)}${colors.yellow("打开日志 位移")}` +
+          colors.magenta(this.Pos)
+      );
     } catch (e) {
       console.error(e);
       return this.openLogFile(r);
     }
   }
   async closeLogFile() {
-    console.log("[PluginsCore:LogFileReader]关闭日志文件");
+    console.log(`${colors.yellow("[")}${colors.green("PluginsCore:LogFileReader")}${colors.yellow("]关闭日志文件")}`);
     return this.Handle.close().catch(a => Promise.resolve());
   }
   async close() {
-    console.log("[PluginsCore:LogFileReader]关闭日志Watcher");
+    console.log(
+      `${colors.yellow("[")}${colors.green("PluginsCore:LogFileReader")}${colors.yellow("]关闭日志Watcher")}`
+    );
     await this.watcher.close();
     return this.closeLogFile();
   }

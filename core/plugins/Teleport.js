@@ -44,7 +44,7 @@ class Teleport extends BasePlugin {
         this.PluginLog("跨世界tp");
         if (typeof Target != "object") {
           Target = await this.getPlayerPosition(Target).catch(a => {
-            console.log("获取位置失败" + a);
+            this.PluginLog("获取位置失败" + a);
             return "crash";
           });
           if (Target == "crash" && retry < 3) {
