@@ -12,7 +12,7 @@ class QuickBackup extends BasePlugin {
   constructor() {
     super(...arguments);
     this.schedule = null;
-    this.backupDest = "/data/mcBackup/mc118";
+    this.backupDest = "/data/mcBackup/SCS";
     this.tmpDir = `/data/mcBackup/tmp`;
     this.onlyCopy = true;
     this.wholeWorldDest = this.backupDest + "/World";
@@ -493,7 +493,7 @@ class QuickBackup extends BasePlugin {
     this.schedule.cancel();
     this.schedule2.cancel();
     await this.CommandSender("stop");
-    this.Core.EventBus.emit("disconnected");
+    this.emit("disconnected");
     setTimeout(async () => {
       this.PluginLog(`清空World文件夹`);
       await fs.emptyDir(this.SaveSource);

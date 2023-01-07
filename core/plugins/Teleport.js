@@ -11,7 +11,7 @@ class Teleport extends BasePlugin {
       return this.Teleport(Source, Target);
     };
   }
-  async Teleport(Source, Target, retry = 0) {
+  async Teleport(Source, Target) {
     if (this.MSPT > 55) {
       this.tellraw("@a", [
         { text: "服务器状态异常，本次TP取消 ", color: "red", bold: true },
@@ -20,35 +20,32 @@ class Teleport extends BasePlugin {
       ]);
       return;
     }
-    if (!retry) {
-      if (new Date().getTime() - this.lastTeleport < 5000) {
-        this.tellraw(this.SelectorWarpper(Source), [
+    if (new Date().getTime() - this.lastTeleport < 5000) {
+      this.tellraw(this.SelectorWarpper(Source), [{ text: "与上次TP间隔过短，本次TP取消", color: "red", bold: true }]);
+      if (typeof Target != "object") {
+        this.tellraw(this.SelectorWarpper(Target), [
           { text: "与上次TP间隔过短，本次TP取消", color: "red", bold: true }
         ]);
-        if (typeof Target != "object") {
-          this.tellraw(this.SelectorWarpper(Target), [
-            { text: "与上次TP间隔过短，本次TP取消", color: "red", bold: true }
-          ]);
-        }
-        return;
       }
-      this.lastTeleport = new Date().getTime();
+      return;
     }
+    this.lastTeleport = new Date().getTime();
+    await this.updateBackPositionDatabase(Source);
     if (this.newVersion) {
       let ret = "";
-      if (!retry && typeof Target != "object") {
+      if (typeof Target != "object") {
         this.PluginLog("尝试非跨世界tp");
-        ret = await this.CommandSender(`tp ${this.SelectorWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+        ret = await this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);
       }
-      if (ret.substring(0, "Teleported".length) != "Teleported" || retry > 0) {
+      if (ret.substring(0, "Teleported".length) != "Teleported") {
         this.PluginLog("跨世界tp");
         if (typeof Target != "object") {
           Target = await this.getPlayerPosition(Target).catch(a => {
             this.PluginLog("获取位置失败" + a);
             return "crash";
           });
-          if (Target == "crash" && retry < 3) {
-            return this.Teleport(Source, Target, ++retry);
+          if (Target == "crash") {
+            return;
           }
         }
         if (Target.dim) {
@@ -73,8 +70,8 @@ class Teleport extends BasePlugin {
           Target = await this.getPlayerPosition(Target).catch(() => {
             return "crash";
           });
-          if (Target == "crash" && retry < 3) {
-            return this.Teleport(Source, Target, ++retry);
+          if (Target == "crash") {
+            return;
           }
         }
         this.PluginLog(`执行命令：forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);

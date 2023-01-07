@@ -33,7 +33,7 @@ class PlayerLists extends BasePlugin {
     }
     if (list.length == 0) {
       if (this.Players.length !== 0) {
-        this.Core.EventBus.emit("playerlistchange", this.Players);
+        this.emit("playerlistchange", this.Players);
       }
       this.Players = [];
       return this.Players;
@@ -44,7 +44,7 @@ class PlayerLists extends BasePlugin {
       .map(a => a.trim())
       .filter(a => a);
     if (this.Players.length != Players.length && !first) {
-      this.Core.EventBus.emit("playerlistchange", Players);
+      this.emit("playerlistchange", Players);
     }
     this.Players = Players;
     return this.Players;

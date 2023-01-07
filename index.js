@@ -2,7 +2,7 @@ require('./.pnp.cjs').setup();
 const PluginCore = require("./core/PluginCore");
 const fs = require("fs-extra");
 let Plugines = new PluginCore({
-  BaseDir: "/home/bbaa/mc118",
+  BaseDir: "/home/bbaa/SCS",
   newVersion:true,
   isForge:true
 });

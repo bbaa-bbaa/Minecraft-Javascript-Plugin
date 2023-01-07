@@ -2,7 +2,6 @@ const BasePlugin = require("../core/basePlugin.js");
 const fs = require("fs-extra");
 const _ = require("lodash");
 const process = require("process");
-const nbttool = require("nbt-ts");
 let HomeData;
 if (fs.existsSync("./home.json")) {
   HomeData = require(process.cwd() + "/home.json");
@@ -70,13 +69,34 @@ class Home extends BasePlugin {
   }
   async home(Player, homename = "default") {
     if (HomeData[Player] && HomeData[Player][homename]) {
-      this.tellraw(Player, [{ text: `两秒后tp回家 ${homename}`, color: "yellow" }]);
+      this.tellraw(Player, [{ text: `两秒后tp回家 「${homename}」`, color: "yellow" }]);
       setTimeout(() => {
         this.Teleport(Player, HomeData[Player][homename]);
       }, 2000);
-    } else {
-      this.tellraw(Player, [{ text: `没有设置家 ${homename}`, color: "red" }]);
+      return;
+    } else if (HomeData[Player]) {
+      let MatchHomes = Object.keys(HomeData[Player]).filter(
+        Home =>
+          homename.length <= Home.length && Home.substring(0, homename.length).toLowerCase() == homename.toLowerCase()
+      );
+      if (MatchHomes.length) {
+        this.tellraw(Player, [
+          { text: `没有设置家 `, color: "yellow" },
+          { text: `「${homename}」`, color: "red" },
+          { text: "\n为你模糊匹配到家", color: "yellow" },
+          { text: `「${MatchHomes[0]}」`, color: "green" },
+          { text: " 两秒后传送", color: "yellow" }
+        ]);
+        setTimeout(() => {
+          this.Teleport(Player, HomeData[Player][MatchHomes[0]]);
+        }, 2000);
+        return;
+      }
     }
+    this.tellraw(Player, [
+      { text: `没有设置家 `, color: "red" },
+      { text: `「${homename}」`, color: "red" }
+    ]);
   }
   async Start() {}
 }
