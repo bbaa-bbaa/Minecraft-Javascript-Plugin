@@ -16,8 +16,11 @@ class BasePlugin {
   get isForge() {
     return this.Core.isForge;
   }
+  emit(...a) {
+    return this.Core.EventBus.emit(...a);
+  }
   PlayerWarpper(Player) {
-    if (this.newVersion) {
+    if (this.newVersion && Player[0]!="@") {
       return `@e[type=minecraft:player,limit=1,name="${Player}"]`;
     } else {
       return Player;
@@ -35,10 +38,10 @@ class BasePlugin {
       pos = Nbt.Pos.map(b => b.toFixed(2));
       dim = Number(Nbt.Dimension);
     } else {
-      const entityData = await this.CommandSender(`data get entity ${this.PlayerWarpper(Player)}`);
-      let Nbt = nbttool.parse(entityData.substring(entityData.indexOf(":") + 1).trim());
-      pos = Nbt.Pos.map(b => b.toFixed(2));
-      dim = Nbt.Dimension;
+      const entityPosData = await this.CommandSender(`data get entity ${this.PlayerWarpper(Player)} Pos`);
+      const entityDimensionData = await this.CommandSender(`data get entity ${this.PlayerWarpper(Player)} Dimension`);
+      pos = nbttool.parse(entityPosData.substring(entityPosData.indexOf(":") + 1).trim()).map(b => b.toFixed(2));
+      dim = nbttool.parse(entityDimensionData.substring(entityDimensionData.indexOf(":") + 1).trim()).trim();
     }
     return { pos, dim };
   }
@@ -163,6 +166,13 @@ class BasePlugin {
       }
     }
     return NewScore;
+  }
+  async updateBackPositionDatabase(PlayerName) {
+    if (this.Core.PluginInterfaces.has("Back")) {
+      return this.Core.PluginInterfaces.get("Back").updateBackPositionDatabase(PlayerName);
+    } else {
+      return false;
+    }
   }
   get MSPT() {
     if (this.Core.PluginInterfaces.has("Status")) {

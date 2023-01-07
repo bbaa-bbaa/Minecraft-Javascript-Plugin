@@ -33,7 +33,7 @@ const GameManager = {
   _ReadyWaitId: 0,
   CurrCommand: null,
   async requestCommand(command) {
-    command = command.replace(/\n/g,"");
+    command = command.replace(/\n/g, "");
     return new Promise((resolve, reject) => {
       this.CommandQueue.push(new CommanderTask(command, resolve, reject));
       this.tryRunNextCommand();
@@ -177,28 +177,33 @@ const GameManager = {
       }
       return;
     }
-    if (
-      this.CurrCommand &&
-      /\[.*DedicatedServer\]: (.*)$/.test(message) &&
-      !/DedicatedServer\]\: <.*?>.*/.test(message) &&
-      !/\w+ (left|joined) the game/.test(message)
-    ) {
-      if (this.CurrCommand.timer) clearTimeout(this.CurrCommand.timer);
-      let match = /\[.*?DedicatedServer.*?\]: (.*)$/.exec(message);
 
-      if (match[1]) {
-        console.log(
-          colors.green(`[MinecraftManager]将命令:`) +
+    if (this.CurrCommand || message.length < 200) {
+      let [DedicatedServerMessage, PlayerMessage, GameLeftMessage] = [
+        /\[.*DedicatedServer\]: (.*)$/.test(message),
+        /DedicatedServer\]\: <.*?>.*/.test(message),
+        /\w+ (left|joined) the game/.test(message)
+      ];
+      if (this.CurrCommand && DedicatedServerMessage && !PlayerMessage && !GameLeftMessage) {
+        if (this.CurrCommand.timer) clearTimeout(this.CurrCommand.timer);
+        let match = /\[.*?DedicatedServer.*?\]: (.*)$/.exec(message);
+
+        if (match[1]) {
+          console.log(
+            colors.green(`[MinecraftManager]将命令:`) +
             colors.blue(this.CurrCommand.Command) +
             colors.green(`的输出储存为:`) +
             colors.yellow(match[1])
-        );
-        this.CurrCommand.buffer.push(match[1].trim());
-        this.CurrCommand.timer = setTimeout(() => {
-          return this.FinishCommand();
-        }, waitMessage);
+          );
+          this.CurrCommand.buffer.push(match[1].trim());
+          this.CurrCommand.timer = setTimeout(() => {
+            return this.FinishCommand();
+          }, waitMessage);
+        } else {
+          console.log(`[MinecraftManager]未知输出:` + colors.red(message));
+        }
       } else {
-        console.log(colors.red(message));
+        ipc.server.broadcast("MinecraftLog",  message );
       }
     }
   }

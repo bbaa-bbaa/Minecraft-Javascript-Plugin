@@ -5,7 +5,8 @@ const moment = require("moment");
 const ipc = require("@achrinza/node-ipc").default;
 const EventEmitter = require("events");
 const LogFileReader = require(__dirname + "/LogFileReader");
-const CommandSender = require(__dirname + "/CommandSender")
+const MinecraftLogReceivcer = require(__dirname + "/GameManagerLogReceiver");
+const CommandSender = require(__dirname + "/CommandSender");
 const util = require("util");
 const colors = require("@colors/colors");
 const runCommand = util.promisify(cp.exec);
@@ -13,22 +14,23 @@ class PluginCore {
   constructor(options) {
     console.log(colors.red(`Plugins Core 启动`));
     this.RconClient = {};
-    this.isForge=options.isForge;
+    this.isForge = options.isForge;
     this.EventBus = new EventEmitter();
     this.LogFileReader = {};
+    this.MinecraftLogReceivcer = null;
     this.LogFile = options.BaseDir + "/logs/latest.log";
     this.BaseDir = options.BaseDir;
     this.options = options;
-    this.PendingRestart=false;
+    this.PendingRestart = false;
     this.PluginRegisters = [];
     this.NativeLogProcessers = [];
     this.PluginInterfaces = new Map();
     this.Crashed = false;
     this.Error = false;
     this.ipc = ipc;
-    this.ipcState="waitPath";
+    this.ipcState = "waitPath";
     this.crashDetect();
-    this.Crashed=false;
+    this.Crashed = false;
     this.initIpc(options);
     this.addPluginRegister(this.registerNativeLogProcesser, this);
     this.addPluginRegister(this.addPluginRegister, this);
@@ -44,25 +46,35 @@ class PluginCore {
       fs.watch(this.BaseDir + "/crash-reports/", {}, (e, f) => {
         this.Crashed = true;
       });
-    })
+    });
   }
   loadBuiltinPlugins() {
     this.registerPlugin(require(__dirname + "/plugins/simpleCommand.js"));
     this.registerPlugin(require(__dirname + "/plugins/players.js"));
     this.registerPlugin(require(__dirname + "/plugins/scoreboard.js"));
     this.registerPlugin(require(__dirname + "/plugins/WorldMapping.js"));
+    this.registerPlugin(require(__dirname + "/plugins/death.js"));
+    this.registerPlugin(require(__dirname + "/plugins/back.js"));
     this.registerPlugin(require(__dirname + "/plugins/Teleport.js"));
   }
   registerPlugin(Constructor) {
     let PluginClass = Constructor;
     if (this.PluginInterfaces.has(PluginClass.name)) {
-      return console.log(`${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(PluginClass.PluginName)}  ${colors.yellow("已经加载，跳过本次加载")}`);
+      return console.log(
+        `${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(
+          PluginClass.PluginName
+        )}  ${colors.yellow("已经加载，跳过本次加载")}`
+      );
     }
     let PluginInterface = new PluginClass(this);
     this.PluginInterfaces.set(PluginClass.name, PluginInterface);
     PluginInterface._state = "Paused";
     PluginInterface.init(this.genRegisterHelper(PluginInterface));
-    console.log(`${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(PluginClass.PluginName)} ${colors.yellow("加载完成")}`);
+    console.log(
+      `${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(
+        PluginClass.PluginName
+      )} ${colors.yellow("加载完成")}`
+    );
   }
   addPluginRegister(func, scope) {
     this.PluginRegisters.push({ func: func.bind(scope), scope: scope, name: func.name });
@@ -77,55 +89,75 @@ class PluginCore {
     return Root;
   }
   registerNativeLogProcesser(regexp, func, scope) {
-    console.log(`${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(scope.constructor.PluginName)} ${colors.yellow("注册了一个原始日志处理器")} ${colors.magenta(func.name || `(anonymous)`)} ${colors.yellow("match:")+colors.magenta("(regex)")}${colors.magenta(regexp.toString())}`);
+    console.log(
+      `${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(
+        scope.constructor.PluginName
+      )} ${colors.yellow("注册了一个原始日志处理器")} ${colors.magenta(func.name || `(anonymous)`)} ${
+        colors.yellow("match:") + colors.magenta("(regex)")
+      }${colors.magenta(regexp.toString())}`
+    );
     this.NativeLogProcessers.push({ regexp: regexp, func: func, scope: scope });
   }
   initIpc(options) {
-    this.ipc.config.silent=true;
+    this.ipc.config.silent = true;
     this.ipc.connectTo("GM", "/tmp/MinecraftManager.service");
     this.ipc.of.GM.on("connect", () => {
-      console.log(`${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.red("IPC连接成功")}`)
-      this.ipc.of.GM.emit("state")
-    })
+      console.log(
+        `${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.red("IPC连接成功")}`
+      );
+      this.ipc.of.GM.emit("state");
+    });
     this.ipc.of.GM.on("disconnect", () => {
-      this.ipcState="disconnect";
-      console.log(`${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.red("IPC连接断开")}`)
+      this.ipcState = "disconnect";
+      console.log(
+        `${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.red("IPC连接断开")}`
+      );
       this.EventBus.emit("disconnected");
-    })
+    });
     this.ipc.of.GM.on("stop", () => {
       this.EventBus.emit("disconnected");
-      this.ipcState="stop"
-      console.log(`${colors.yellow("[")}${colors.green("PluginsCore:GameManager")}${colors.yellow("]")}${colors.red("服务器停止")}`)
-      if(this.Crashed||this.PendingRestart) {
-        this.Crashed=false;
-        this.PendingRestart=false;
-        this.ipc.of.GM.emit("state")
+      this.ipcState = "stop";
+      console.log(
+        `${colors.yellow("[")}${colors.green("PluginsCore:GameManager")}${colors.yellow("]")}${colors.red(
+          "服务器停止"
+        )}`
+      );
+      if (this.Crashed || this.PendingRestart) {
+        this.Crashed = false;
+        this.PendingRestart = false;
+        this.ipc.of.GM.emit("state");
       }
-    })
+    });
     this.ipc.of.GM.on("ready", () => {
-      this.ipcState="running"
+      this.ipcState = "running";
       this.EventBus.emit("ready");
-    })
-    this.ipc.of.GM.on("state", (s) => {
-      this.ipcState=s;
+    });
+    this.ipc.of.GM.on("state", s => {
+      this.ipcState = s;
       switch (s) {
         case "waitPath":
-          console.log(`${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.yellow("发送启动命令")}`)
+          console.log(
+            `${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.yellow(
+              "发送启动命令"
+            )}`
+          );
           this.ipc.of.GM.emit("path", this.BaseDir + "/start");
-          this.ipc.of.GM.emit("state")
+          this.ipc.of.GM.emit("state");
           break;
         case "stop":
-          if(this.PendingRestart) {
-            this.PendingRestart=false;
+          if (this.PendingRestart) {
+            this.PendingRestart = false;
           }
-          console.log(`${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.green("启动服务器")}`)
+          console.log(
+            `${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.green("启动服务器")}`
+          );
           this.ipc.of.GM.emit("startServer");
           break;
         case "running":
           this.EventBus.emit("ready");
           break;
       }
-    })
+    });
   }
   /*
   connectRconClient(options) {
@@ -149,15 +181,24 @@ class PluginCore {
     }, 10000);
   }*/
   Ready() {
+    /*
     setTimeout(() => {
       this.LogFileReader = new LogFileReader(this, this.LogFile);
     }, 1000);
+    */
+    if (!this.MinecraftLogReceivcer)
+      setTimeout(() => {
+        this.MinecraftLogReceivcer = new MinecraftLogReceivcer(this, this.ipc.of.GM);
+      }, 1000);
     for (let Plugin of this.PluginInterfaces.values()) {
       if (Plugin._state == "Started") continue;
       if (Plugin.Start) {
-        console.log(`${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]请求初始化")} ${colors.magenta(Plugin.constructor.PluginName)}`);
+        console.log(
+          `${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]请求初始化")} ${colors.magenta(
+            Plugin.constructor.PluginName
+          )}`
+        );
         Plugin.Start.call(Plugin);
-
       }
       Plugin._state = "Started";
     }
