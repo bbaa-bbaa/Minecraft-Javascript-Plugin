@@ -9,13 +9,9 @@ class TelePortCommand extends BasePlugin {
   }
   async tp(Player, Targetn) {
     if (!Targetn) return;
-    this.Players
-      .map(a => a.trim())
-      .filter(name => {
-        return (
-          name.length >= Targetn.length && Targetn.toLowerCase() == name.substr(0, Targetn.length).toLowerCase()
-        );
-      });
+    let List = this.Players.map(a => a.trim()).filter(name => {
+      return name.length >= Targetn.length && Targetn.toLowerCase() == name.substr(0, Targetn.length).toLowerCase();
+    });
     if (List.length == 1) {
       let Target = List[0];
       await this.Scoreboard.updateScore(Player, "Health");
@@ -24,14 +20,14 @@ class TelePortCommand extends BasePlugin {
       let MyHealth = HealthList[Player];
       let TargetHealth = HealthList[Target];
       if (MyHealth <= 2) {
-        this.tellraw(`${Player}`, [{ text: `濒死状态无法进TP操作`, color: "red", bold: false }]).catch(() => { });
+        this.tellraw(`${Player}`, [{ text: `濒死状态无法进TP操作`, color: "red", bold: false }]).catch(() => {});
         this.tellraw(`${Target}`, [
           {
             text: `${Player} 尝试TP到你，但是由于他的血量过低，TP失败`,
             color: "red",
             bold: false
           }
-        ]).catch(() => { });
+        ]).catch(() => {});
         return;
       }
       if (TargetHealth <= 8) {
@@ -41,24 +37,24 @@ class TelePortCommand extends BasePlugin {
             color: "red",
             bold: true
           }
-        ]).catch(() => { });
+        ]).catch(() => {});
         this.tellraw(`${Target}`, [
           {
             text: `${Player} 尝试TP到你，但是由于你的血量过低，TP失败`,
             color: "red",
             bold: true
           }
-        ]).catch(() => { });
+        ]).catch(() => {});
         return;
       }
       this.PluginLog(`执行 ` + `tp ${Player} ${Target}`);
-      this.tellraw(`${Player}`, [{ text: `2秒后TP到${Target}`, color: "green", bold: true }]).catch(() => { });
-      this.tellraw(`${Target}`, [{ text: `2秒后${Player} TP到你`, color: "green", bold: true }]).catch(() => { });
+      this.tellraw(`${Player}`, [{ text: `2秒后TP到${Target}`, color: "green", bold: true }]).catch(() => {});
+      this.tellraw(`${Target}`, [{ text: `2秒后${Player} TP到你`, color: "green", bold: true }]).catch(() => {});
       setTimeout(() => {
         this.Teleport(Player, Target);
       }, 2000);
     } else {
-      this.tellraw(`${Player}`, [{ text: "非唯一目标", color: "red", bold: true }]).catch(() => { });
+      this.tellraw(`${Player}`, [{ text: "非唯一目标", color: "red", bold: true }]).catch(() => {});
     }
   }
   async Start() {
