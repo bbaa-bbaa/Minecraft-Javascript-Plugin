@@ -11,13 +11,9 @@ class DeathCount extends BasePlugin {
   async deathEvent(line) {
     let PlayerName = line.split("]: ")[1].split(" ")[0].trim();
     if (this.Players.indexOf(PlayerName) >= 0) {
-      if (
-        parseInt(
-          (await this.CommandSender(`data get entity ${PlayerName} DeathTime`).catch(a => ":0s"))
-            .split(":")[1]
-            .replace(/s$/g, "")
-        )
-      ) {
+      let PlayerDeathData = await this.CommandSender(`data get entity ${PlayerName} DeathTime`).catch(a => ":0s");
+      let Spliter = PlayerDeathData.indexOf(":");
+      if (Spliter >= 0 && parseInt(PlayerDeathData.substr(Spliter).replace(/s$/g, ""))) {
         this.PluginLog(`玩家 ${PlayerName} 不幸离世`);
         this.updateBackPositionDatabase(PlayerName);
       }
