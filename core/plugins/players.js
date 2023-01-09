@@ -4,14 +4,14 @@ class PlayerLists extends BasePlugin {
   static PluginName = "玩家数量";
   constructor() {
     super(...arguments);
-    this.Players = [];
+    this._Players = [];
     this.LoopId = 0;
   }
   init(Plugin) {
     Plugin.registerNativeLogProcesser(/\w+ (left|joined) the game/, () => {this.updatePlayerLists() });
     Object.defineProperty(this.Core, "Players", {
       get: () => {
-        return this.Players;
+        return this._Players;
       }
     });
   }
@@ -32,22 +32,22 @@ class PlayerLists extends BasePlugin {
       return;
     }
     if (list.length == 0) {
-      if (this.Players.length !== 0) {
-        this.emit("playerlistchange", this.Players);
+      if (this._Players.length !== 0) {
+        this.emit("playerlistchange", this._Players);
       }
-      this.Players = [];
-      return this.Players;
+      this._Players = [];
+      return this._Players;
 
     }
     let Players = list[1]
       .split(",")
       .map(a => a.trim())
       .filter(a => a);
-    if (this.Players.length != Players.length && !first) {
+    if (this._Players.length != Players.length && !first) {
       this.emit("playerlistchange", Players);
     }
-    this.Players = Players;
-    return this.Players;
+    this._Players = Players;
+    return this._Players;
   }
 }
 module.exports = PlayerLists;

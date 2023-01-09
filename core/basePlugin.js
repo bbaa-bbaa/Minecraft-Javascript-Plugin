@@ -21,7 +21,7 @@ class BasePlugin {
   }
   PlayerWarpper(Player) {
     if (this.newVersion && Player[0]!="@") {
-      return `@e[type=minecraft:player,limit=1,name="${Player}"]`;
+      return `@a[limit=1,name="${Player}"]`;
     } else {
       return Player;
     }
@@ -105,8 +105,11 @@ class BasePlugin {
     // this.PluginLog(`[${new Date().getTime()}]执行命令:`+arguments[0])
     return this.Core.CommandSender.requestCommand(cmd).catch(() => {});
   }
+  get Players() {
+    return this.Core.Players;
+  }
   async tellraw(Dest, Json) {
-    if (!this.Core.Players.length) {
+    if (!this.Players.length) {
       this.PluginLog("无玩家在线，忽略Tellraw");
     }
     if (this.newVersion && !/@/.test(Dest)) {

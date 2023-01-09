@@ -19,7 +19,7 @@ class Back extends BasePlugin {
     super(...arguments);
   }
   init(Plugin) {
-  //  Plugin.registerCommand("back", this.back);
+    Plugin.registerCommand("back", this.back);
   }
   async back(Player) {
     if (LastPositionDb[Player]) {
@@ -43,7 +43,6 @@ class Back extends BasePlugin {
     }
   }
   async updateBackPositionDatabase(PlayerName) {
-    return;
     let Position = await this.getPlayerPosition(PlayerName).catch(a => {
       this.PluginLog("获取位置失败" + a);
       return "crash";

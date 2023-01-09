@@ -543,7 +543,7 @@ class QuickBackup extends BasePlugin {
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
       { text: `删除中`, color: "red", bold: false }
     ]);
-    await fs.unlink(backfile.path);
+    await runCommand(`fish -c 'rm -rf "${backfile.path}"'`).catch(a=>"");
     this.tellraw("@a", [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
       { text: `删除完成`, color: "red", bold: false }
