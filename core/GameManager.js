@@ -126,7 +126,7 @@ const GameManager = {
     });
   },
   Start() {
-    this.MinecraftProcess = cp.spawn(this.startCommand, { stdio: ["pipe", "pipe", "ignore"] });
+    this.MinecraftProcess = cp.spawn(this.startCommand, { stdio: ["pipe", "pipe", "ignore"],shell:true });
     this.readLine = readline.createInterface({
       input: this.MinecraftProcess.stdout
     });
