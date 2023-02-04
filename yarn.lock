@@ -590,9 +590,9 @@ __metadata:
   linkType: hard
 
 "http-cache-semantics@npm:^4.1.0":
-  version: 4.1.0
-  resolution: "http-cache-semantics@npm:4.1.0"
-  checksum: 974de94a81c5474be07f269f9fd8383e92ebb5a448208223bfb39e172a9dbc26feff250192ecc23b9593b3f92098e010406b0f24bd4d588d631f80214648ed42
+  version: 4.1.1
+  resolution: "http-cache-semantics@npm:4.1.1"
+  checksum: 83ac0bc60b17a3a36f9953e7be55e5c8f41acc61b22583060e8dedc9dd5e3607c823a88d0926f9150e571f90946835c7fe150732801010845c72cd8bbff1a236
   languageName: node
   linkType: hard
 
@@ -803,9 +803,9 @@ __metadata:
   linkType: hard
 
 "luxon@npm:^1.26.0":
-  version: 1.28.0
-  resolution: "luxon@npm:1.28.0"
-  checksum: 5250cb9f138b6048eeb0b3a9044a4ac994d0058f680c72a0da4b6aeaec8612460385639cba2b1052ef6d5564879e9ed144d686f26d9d97b38ab920d82e18281c
+  version: 1.28.1
+  resolution: "luxon@npm:1.28.1"
+  checksum: 2c62999adea79645fd1e931d685f61aeb33eda7f39fbf79b84261a233b62f9590f48336654ee9efd405848bd9e13dc7fe087c701b7126187201a88998dc68b04
   languageName: node
   linkType: hard
 
@@ -848,7 +848,7 @@ __metadata:
     fs-extra: ^9.1.0
     klaw-sync: ^6.0.0
     lodash: ^4.17.21
-    moment: ^2.29.1
+    moment: ^2.29.4
     nbt-ts: ^1.3.4
     node-schedule: ^2.0.0
     pako: ^2.0.4
@@ -956,10 +956,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"moment@npm:^2.29.1":
-  version: 2.29.3
-  resolution: "moment@npm:2.29.3"
-  checksum: 2e780e36d9a1823c08a1b6313cbb08bd01ecbb2a9062095820a34f42c878991ccba53abaa6abb103fd5c01e763724f295162a8c50b7e95b4f1c992ef0772d3f0
+"moment@npm:^2.29.4":
+  version: 2.29.4
+  resolution: "moment@npm:2.29.4"
+  checksum: 0ec3f9c2bcba38dc2451b1daed5daded747f17610b92427bebe1d08d48d8b7bdd8d9197500b072d14e326dd0ccf3e326b9e3d07c5895d3d49e39b6803b76e80e
   languageName: node
   linkType: hard
 
