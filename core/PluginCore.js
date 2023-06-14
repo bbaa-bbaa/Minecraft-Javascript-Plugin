@@ -1,6 +1,7 @@
 const Rcon = require("rcon-client").Rcon;
 const fs = require("fs-extra");
 const cp = require("child_process");
+const process = require("process");
 const moment = require("moment");
 const ipc = require("@achrinza/node-ipc").default;
 const EventEmitter = require("events");
@@ -14,13 +15,16 @@ class PluginCore {
   constructor(options) {
     console.log(colors.red(`Plugins Core 启动`));
     this.RconClient = {};
+    this.platform = process.platform;
     this.isForge = options.isForge;
     this.EventBus = new EventEmitter();
     this.LogFileReader = {};
     this.MinecraftLogReceivcer = null;
+    this.PluginSettings = options.PluginSettings || {}
     this.LogFile = options.BaseDir + "/logs/latest.log";
     this.BaseDir = options.BaseDir;
     this.options = options;
+    this.startCommand = options.startCommand || this.BaseDir + "/start";
     this.PendingRestart = false;
     this.PluginRegisters = [];
     this.NativeLogProcessers = [];
@@ -39,7 +43,7 @@ class PluginCore {
       this.Disconnected();
     });
     this.EventBus.on("ready", this.Ready.bind(this));
-    this.CommandSender = new CommandSender(this, this.ipc.of.GM);
+    this.CommandSender = new CommandSender(this, this.ipc.of["MinecraftManager"]);
   }
   crashDetect() {
     fs.ensureDir(this.BaseDir + "/crash-reports/").then(() => {
@@ -67,9 +71,17 @@ class PluginCore {
       );
     }
     let PluginInterface = new PluginClass(this);
+    let InitState = PluginInterface.init(this.genRegisterHelper(PluginInterface));
+    if (InitState < 0) {
+      console.log(
+        `${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(
+          PluginClass.PluginName
+        )} ${colors.red("加载失败 Reason: " + InitState)}`
+      );
+      return;
+    }
     this.PluginInterfaces.set(PluginClass.name, PluginInterface);
     PluginInterface._state = "Paused";
-    PluginInterface.init(this.genRegisterHelper(PluginInterface));
     console.log(
       `${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(
         PluginClass.PluginName
@@ -92,29 +104,28 @@ class PluginCore {
     console.log(
       `${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(
         scope.constructor.PluginName
-      )} ${colors.yellow("注册了一个原始日志处理器")} ${colors.magenta(func.name || `(anonymous)`)} ${
-        colors.yellow("match:") + colors.magenta("(regex)")
+      )} ${colors.yellow("注册了一个原始日志处理器")} ${colors.magenta(func.name || `(anonymous)`)} ${colors.yellow("match:") + colors.magenta("(regex)")
       }${colors.magenta(regexp.toString())}`
     );
     this.NativeLogProcessers.push({ regexp: regexp, func: func, scope: scope });
   }
   initIpc(options) {
     this.ipc.config.silent = true;
-    this.ipc.connectTo("GM", "/tmp/MinecraftManager.service");
-    this.ipc.of.GM.on("connect", () => {
+    this.ipc.connectTo("MinecraftManager");
+    this.ipc.of["MinecraftManager"].on("connect", () => {
       console.log(
         `${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.red("IPC连接成功")}`
       );
-      this.ipc.of.GM.emit("state");
+      this.ipc.of["MinecraftManager"].emit("state");
     });
-    this.ipc.of.GM.on("disconnect", () => {
+    this.ipc.of["MinecraftManager"].on("disconnect", () => {
       this.ipcState = "disconnect";
       console.log(
         `${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.red("IPC连接断开")}`
       );
       this.EventBus.emit("disconnected");
     });
-    this.ipc.of.GM.on("stop", () => {
+    this.ipc.of["MinecraftManager"].on("stop", () => {
       this.EventBus.emit("disconnected");
       this.ipcState = "stop";
       console.log(
@@ -125,14 +136,14 @@ class PluginCore {
       if (this.Crashed || this.PendingRestart) {
         this.Crashed = false;
         this.PendingRestart = false;
-        this.ipc.of.GM.emit("state");
+        this.ipc.of["MinecraftManager"].emit("state");
       }
     });
-    this.ipc.of.GM.on("ready", () => {
+    this.ipc.of["MinecraftManager"].on("ready", () => {
       this.ipcState = "running";
       this.EventBus.emit("ready");
     });
-    this.ipc.of.GM.on("state", s => {
+    this.ipc.of["MinecraftManager"].on("state", s => {
       this.ipcState = s;
       switch (s) {
         case "waitPath":
@@ -141,8 +152,8 @@ class PluginCore {
               "发送启动命令"
             )}`
           );
-          this.ipc.of.GM.emit("path", this.BaseDir + "/start");
-          this.ipc.of.GM.emit("state");
+          this.ipc.of["MinecraftManager"].emit("path", this.startCommand);
+          this.ipc.of["MinecraftManager"].emit("state");
           break;
         case "stop":
           if (this.PendingRestart) {
@@ -151,7 +162,7 @@ class PluginCore {
           console.log(
             `${colors.yellow("[")}${colors.green("PluginsCore:IPC")}${colors.yellow("]")}${colors.green("启动服务器")}`
           );
-          this.ipc.of.GM.emit("startServer");
+          this.ipc.of["MinecraftManager"].emit("startServer");
           break;
         case "running":
           this.EventBus.emit("ready");
@@ -188,7 +199,7 @@ class PluginCore {
     */
     if (!this.MinecraftLogReceivcer)
       setTimeout(() => {
-        this.MinecraftLogReceivcer = new MinecraftLogReceivcer(this, this.ipc.of.GM);
+        this.MinecraftLogReceivcer = new MinecraftLogReceivcer(this, this.ipc.of["MinecraftManager"]);
       }, 1000);
     for (let Plugin of this.PluginInterfaces.values()) {
       if (Plugin._state == "Started") continue;

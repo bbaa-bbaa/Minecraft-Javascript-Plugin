@@ -5,10 +5,16 @@ const colors = require("@colors/colors");
 let uuidCache = {};
 const nbttool = require("nbt-ts");
 class BasePlugin {
+  get platform() {
+    return this.Core.platform;
+  }
   constructor(Core) {
     this.Core = Core;
     const hash = crypto.createHash("sha1");
     this.Scoreboard_Prefix = hash.update(this.constructor.name).digest("hex");
+  }
+  get Settings() {
+    return this.Core.PluginSettings[this.constructor.name] || {};
   }
   get ipc() {
     return this.Core.ipc;
@@ -39,8 +45,10 @@ class BasePlugin {
       dim = Number(Nbt.Dimension);
     } else {
       const entityPosData = await this.CommandSender(`data get entity ${this.PlayerWarpper(Player)} Pos`);
+      console.log(entityPosData)
       const entityDimensionData = await this.CommandSender(`data get entity ${this.PlayerWarpper(Player)} Dimension`);
       pos = nbttool.parse(entityPosData.substring(entityPosData.indexOf(":") + 1).trim()).map(b => b.toFixed(2));
+      console.log(entityDimensionData.substring(entityDimensionData.indexOf(":") + 1).trim())
       dim = nbttool.parse(entityDimensionData.substring(entityDimensionData.indexOf(":") + 1).trim()).trim();
     }
     return { pos, dim };

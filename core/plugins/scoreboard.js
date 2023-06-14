@@ -107,6 +107,7 @@ class Scoreboard extends BasePlugin {
           if (!/^.*? has (\d+)/.test(c)) return Promise.resolve();
           let score = Number(c.match(/^.*? has (\d+)/)[1]);
           if (!isNaN(score)) {
+            if(!this.Scores[player]) this.Scores[player]={};
             this.Scores[player][name] = score;
             this.PluginLog(`玩家:${player} 的 ${name} 记分项值为:${score}`);
           }
@@ -118,9 +119,9 @@ class Scoreboard extends BasePlugin {
         console.log(ScoreList);
         this.PluginLog(`获取被跟踪的实体列表`);
         return this.CommandSender("scoreboard players list").then(async a => {
-          if (!/There are \d tracked entities:\s?(.*)/.test(a)) return Promise.resolve();
+          if (!/There are \d tracked .*?:\s?(.*)/.test(a)) return Promise.resolve();
           let players = a
-            .match(/There are \d tracked entities:\s?(.*)/)[1]
+            .match(/There are \d tracked .*?:\s?(.*)/)[1]
             .split(",")
             .map(b => b.trim());
           for (let i of players) {

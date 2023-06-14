@@ -626,7 +626,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"iconv-lite@npm:^0.6.2":
+"iconv-lite@npm:^0.6.2, iconv-lite@npm:^0.6.3":
   version: 0.6.3
   resolution: "iconv-lite@npm:0.6.3"
   dependencies:
@@ -846,6 +846,7 @@ __metadata:
     chokidar: ^3.5.3
     cpu: ^1.0.1
     fs-extra: ^9.1.0
+    iconv-lite: ^0.6.3
     klaw-sync: ^6.0.0
     lodash: ^4.17.21
     moment: ^2.29.4

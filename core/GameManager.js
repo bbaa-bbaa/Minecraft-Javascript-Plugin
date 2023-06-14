@@ -3,11 +3,9 @@ const cp = require("child_process");
 const process = require("process");
 const colors = require("@colors/colors");
 const readline = require("readline");
+const path = require("path");
 const _ = require("lodash");
-function _writePoint() {
-  process.stdout.write(".");
-}
-const writePoint = _.throttle(_writePoint, 1000);
+const iconv = require("iconv-lite");
 let waitMessage = 15;
 const skipWaitCommand = ["tellraw"];
 class CommanderTask {
@@ -56,7 +54,11 @@ const GameManager = {
     this.CurrCommand = this.CommandQueue.shift();
     this.CurrCommand.timer = 0;
     console.log(colors.green(`[MinecraftManager]执行命令:`) + colors.red(this.CurrCommand.Command));
-    this.MinecraftProcess.stdin.write(this.CurrCommand.Command + "\n");
+    if (process.platform == "win32") {
+      this.MinecraftProcess.stdin.write(iconv.encode(this.CurrCommand.Command + "\r\n", "GBK"));
+    } else {
+      this.MinecraftProcess.stdin.write(this.CurrCommand.Command + "\n");
+    }
     const NowCommand = this.CurrCommand.Command.split(" ")[0];
     // 无返回命令处理
     if (skipWaitCommand.indexOf(NowCommand) >= 0) {
@@ -68,7 +70,8 @@ const GameManager = {
   },
   Init() {
     ipc.config.silent = true;
-    ipc.serve("/tmp/MinecraftManager.service");
+    ipc.config.id = "MinecraftManager";
+    ipc.serve();
     ipc.server.start();
     ipc.server.on("state", () => {
       ipc.server.broadcast("state", this.state);
@@ -97,8 +100,6 @@ const GameManager = {
           await new Promise(r => setTimeout(r, 1000));
         }
       }
-      console.log(colors.green(`[MinecraftManager]10s后程序退出`));
-      await new Promise(r => setTimeout(r, 10000));
       process.exit();
     });
     process.on("SIGTERM", async code => {
@@ -110,8 +111,6 @@ const GameManager = {
           await new Promise(r => setTimeout(r, 1000));
         }
       }
-      console.log(colors.green(`[MinecraftManager]10s后程序退出`));
-      await new Promise(r => setTimeout(r, 10000));
       process.exit();
     });
     ipc.server.on("command", ({ command, id }) => {
@@ -126,10 +125,18 @@ const GameManager = {
     });
   },
   Start() {
-    this.MinecraftProcess = cp.spawn(this.startCommand, { stdio: ["pipe", "pipe", "ignore"],shell:true });
-    this.readLine = readline.createInterface({
-      input: this.MinecraftProcess.stdout
-    });
+    this.MinecraftProcess = cp.spawn(this.startCommand, { stdio: ["pipe", "pipe", "ignore"], shell: true, cwd: path.dirname(this.startCommand) });
+    if (process.platform == "win32") {
+      let iconvStream = iconv.decodeStream('GBK');
+      this.MinecraftProcess.stdout.pipe(iconvStream)
+      this.readLine = readline.createInterface({
+        input: iconvStream
+      });
+    } else {
+      this.readLine = readline.createInterface({
+        input: this.MinecraftProcess.stdout
+      });
+    }
     this.state = "waitForReady";
     this.MinecraftProcess.on("exit", a => {
       this.CurrCommand = null;
@@ -169,24 +176,25 @@ const GameManager = {
         this.beforeReady();
       } else if (
         this.state == "beforeReady" &&
-        /(Unknown command. Try \/help for a list of commands|Unknown or incomplete command)/.test(message)
+        /(Unknown command.|Unknown or incomplete command)/.test(message)
       ) {
         this.Ready();
       } else {
-        writePoint();
+        console.log(message);
       }
       return;
     }
 
     if (this.CurrCommand || message.length < 200) {
-      let [DedicatedServerMessage, PlayerMessage, GameLeftMessage] = [
-        /\[.*DedicatedServer\]: (.*)$/.test(message),
-        /DedicatedServer\]\: <.*?>.*/.test(message),
-        /\w+ (left|joined) the game/.test(message)
+      let [DedicatedServerMessage, PlayerMessage, GameLeftMessage, LoginMessage] = [
+        /\[.*\]: (.*)$/.test(message),
+        /\]\: <.*?>.*/.test(message),
+        /\w+ (left|joined) the game/.test(message),
+        /\[.*\]:.*? logged in with/.test(message)
       ];
-      if (this.CurrCommand && DedicatedServerMessage && !PlayerMessage && !GameLeftMessage) {
+      if (this.CurrCommand && DedicatedServerMessage && !PlayerMessage && !GameLeftMessage && !LoginMessage) {
         if (this.CurrCommand.timer) clearTimeout(this.CurrCommand.timer);
-        let match = /\[.*?DedicatedServer.*?\]: (.*)$/.exec(message);
+        let match = /\[.*?\]: (.*)$/.exec(message);
 
         if (match[1]) {
           console.log(
@@ -203,7 +211,7 @@ const GameManager = {
           console.log(`[MinecraftManager]未知输出:` + colors.red(message));
         }
       } else {
-        ipc.server.broadcast("MinecraftLog",  message );
+        ipc.server.broadcast("MinecraftLog", message);
       }
     }
   }

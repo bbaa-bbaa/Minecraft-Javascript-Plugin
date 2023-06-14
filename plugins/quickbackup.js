@@ -12,8 +12,8 @@ class QuickBackup extends BasePlugin {
   constructor() {
     super(...arguments);
     this.schedule = null;
-    this.backupDest = "/data/mcBackup/SCS";
-    this.tmpDir = `/data/mcBackup/tmp`;
+    this.backupDest = this.Settings.backupDest || "/data/mcBackup/SCS";
+    this.tmpDir = this.Settings.tmpDir || `/data/mcBackup/tmp`;
     this.onlyCopy = true;
     this.wholeWorldDest = this.backupDest + "/World";
     this.PlayerDataDest = this.backupDest + "/Playerdata";
@@ -248,7 +248,7 @@ class QuickBackup extends BasePlugin {
           case "back":
             clearInterval(this.backPending.waitLoop);
             clearTimeout(this.backPending.Timer);
-            if(this.Rollbacking) {
+            if (this.Rollbacking) {
               this.tellraw(this.backpdPending.requester.name, [
                 { text: `正在另一个回档进程之中，该请求取消`, color: "red", bold: false }
               ]);
@@ -267,18 +267,18 @@ class QuickBackup extends BasePlugin {
               ]);
               if (this.backPending.waitCount >= 10) {
                 clearInterval(this.backPending.waitLoop);
-                this.RunBack(this.backPending.choice).catch(() => {});
+                this.RunBack(this.backPending.choice).catch(() => { });
               }
             }, 1000);
             break;
           case "delete":
             if (!this.deletePending.choice || this.deletePending.choice == "") return;
-            this.deleteSave(this.deletePending.choice).catch(() => {});
+            this.deleteSave(this.deletePending.choice).catch(() => { });
             break;
           case "backpd":
             clearInterval(this.backpdPending.waitLoop);
             clearTimeout(this.backpdPending.Timer);
-            if(this.Rollbacking) {
+            if (this.Rollbacking) {
               this.tellraw(this.backpdPending.requester.name, [
                 { text: `正在另一个回档进程之中，该请求取消`, color: "red", bold: false }
               ]);
@@ -297,7 +297,7 @@ class QuickBackup extends BasePlugin {
               ]);
               if (this.backpdPending.waitCount >= 5) {
                 clearInterval(this.backpdPending.waitLoop);
-                this.RunBackPd(this.backpdPending.choice).catch(() => {});
+                this.RunBackPd(this.backpdPending.choice).catch(() => { });
               }
             }, 1000);
             break;
@@ -499,10 +499,19 @@ class QuickBackup extends BasePlugin {
       await fs.emptyDir(this.SaveSource);
       if (!this.onlyCopy) {
         this.PluginLog(`释放存档`);
-        await runCommand(`fish -c 'tar --zstd -xvf ${backfile.path} -C ${this.SaveSource}'`);
+        if (this.platform != "win32") {
+          await runCommand(`bash -c 'tar --zstd -xvf "${backfile.path}" -C "${this.SaveSource}"'`);
+        } else {
+          await runCommand(`tar -zxvf "${backfile.path}" -C "${this.SaveSource}"`);
+        }
       } else {
         this.PluginLog(`复制存档`);
-        await runCommand(`fish -c 'cp -r "${backfile.path}/." "${this.SaveSource}"'`);
+        await fs
+          .copy(backfile.path, this.SaveSource, {
+            preserveTimestamps: true
+          })
+          .then(a => false)
+          .catch(a => true)
       }
       this.PluginLog(`启动服务器`);
       this.Core.PendingRestart = true;
@@ -543,7 +552,11 @@ class QuickBackup extends BasePlugin {
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
       { text: `删除中`, color: "red", bold: false }
     ]);
-    await runCommand(`fish -c 'rm -rf "${backfile.path}"'`).catch(a=>"");
+    if (this.platform != "win32") {
+      await runCommand(`bash -c 'rm -rf "${backfile.path}"'`).catch(a => "");
+    } else {
+      await runCommand(`rmdir /s /q "${backfile.path}"`)
+    }
     this.tellraw("@a", [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: false },
       { text: `删除完成`, color: "red", bold: false }
@@ -570,7 +583,7 @@ class QuickBackup extends BasePlugin {
     this.lastBackup = new Date().getTime();
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
     this.PluginLog(`[${moment().format("HH:mm:ss")}]运行备份 备注:${comment}`);
-    let FileName = this.onlyCopy ? `${comment}` : `${comment}.tar.zst`;
+    let FileName = this.onlyCopy ? `${comment}` : this.platform != "win32" ? `${comment}.tar.zst` : `${comment}.tar.gz`;
     let Path = `${this.tmpDir}/Minecraft/${FileName}`;
     await this.tellraw(`@a`, [
       { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
@@ -588,10 +601,15 @@ class QuickBackup extends BasePlugin {
     ]);
     if (this.onlyCopy) {
       await fs.ensureDir(`${this.wholeWorldDest}/${FileName}`);
-      while (await runCommand(`fish -c 'cp -r "${this.SaveSource}/." "${this.wholeWorldDest}/${FileName}"'`, {}).catch(e=>"error")=="error"){};
-      let size =
-        Number((await runCommand(`fish -c 'du -d 0 "${this.wholeWorldDest}/${FileName}"'`)).stdout.split("\t")[0]) /
-        1024;
+      await fs
+        .copy(this.SaveSource, `${this.wholeWorldDest}/${FileName}`, {
+          preserveTimestamps: true
+        })
+        .then(a => false)
+        .catch(a => true)
+      let size = this.platform != "win32" ?
+        Number((await runCommand(`bash -c 'du -d 0 "${this.wholeWorldDest}/${FileName}"'`)).stdout.split("\t")[0]) /
+        1024 : "Windows不支持";
       await this.tellraw(`@a`, [
         { text: `[${moment().format("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: `存档复制完成 存档大小：`, color: "aqua" },
@@ -618,7 +636,11 @@ class QuickBackup extends BasePlugin {
       ) {
         // do notings
       }
-      let a = await runCommand(`fish -c 'tar --zstd -cvf ../${FileName} *'`, { cwd: `${this.tmpDir}/Minecraft/world` });
+      if (this.platform != "win32") {
+        await runCommand(`bash -c 'tar --zstd -cvf ../${FileName} *'`, { cwd: `${this.tmpDir}/Minecraft/world` });
+      } else {
+        await runCommand(`tar -zcvf ../${FileName} .`, { cwd: `${this.tmpDir}/Minecraft/world` });
+      }
       await fs.emptyDir(`${this.tmpDir}/Minecraft/world`);
       let Stat = fs.statSync(Path);
       let Size = Stat.size / 1048576;
@@ -679,12 +701,12 @@ class QuickBackup extends BasePlugin {
               { text: "\n来进行存档的备份", color: "aqua" }
             ]);
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     });
     this.schedule2 = schedule.scheduleJob("0 * * * * *", async () => {
       if (this.Core.Players.length) {
-        this.RunBackupPlayerData(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`).catch(() => {});
+        this.RunBackupPlayerData(`自动备份-${moment().format("YY-MM-DD-HH-mm-ss")}`).catch(() => { });
       }
     });
     await this.cleanBackup();
@@ -696,7 +718,7 @@ class QuickBackup extends BasePlugin {
       { text: "\n来进行存档的备份", color: "aqua" }
     ]);
   }
-  async cleanBackup(){
+  async cleanBackup() {
     if (!this.onlyCopy) {
       let ServerFile = klawSync(this.wholeWorldDest, {
         nodir: true
@@ -715,8 +737,12 @@ class QuickBackup extends BasePlugin {
         .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
       for (let File of ServerFile) {
         if (new Date().getTime() - File.stats.mtimeMs > 86400000) {
-          this.PluginLog("删除备份"+File.path)
-          await runCommand(`fish -c 'rm -rf "${File.path}"'`).catch(a=>"");
+          this.PluginLog("删除备份" + File.path)
+          if (this.platform != "win32") {
+            await runCommand(`bash -c 'rm -rf "${File.path}"'`).catch(a => "");
+          } else {
+            await runCommand(`rd /s /q "${File.path}"`).catch(a => "");
+          }
         }
       }
     }

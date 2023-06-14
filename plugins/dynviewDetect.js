@@ -7,6 +7,7 @@ class DynView extends BasePlugin {
     this.CView = 12;
   }
   init(Plugin) {
+    return -1;
     Plugin.registerCommand("queryview", this.getView.bind(this));
     Plugin.registerNativeLogProcesser(
       /\[com.dynamic_view.DynView\/\]: Mean tick: (\d*)ms (increasing|decreasing) (chunk view distance|simulation distance) to: (\d*)/,
