@@ -1,7 +1,7 @@
 let BasePlugin = require("../core/basePlugin.js");
 const si = require("systeminformation");
 const cpu = require("cpu");
-const moment = require("moment");
+const {DateTime} = require("luxon")
 const os = require("os");
 class Status extends BasePlugin {
   static PluginName = "监控系统";
@@ -36,7 +36,7 @@ class Status extends BasePlugin {
     if (force) {
       let Mem = await si.mem();
       this.tellraw(`@a`, [
-        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
         ...this.Info.cpu.map((cpu, idx) => {
           return [
             { text: `CPU#${idx}:`, color: "aqua" },
@@ -45,7 +45,7 @@ class Status extends BasePlugin {
         })
       ]);
       this.tellraw(`@a`, [
-        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
         ...os.loadavg().map((la, idx) => {
           la = la.toFixed(2);
           return [
@@ -63,7 +63,7 @@ class Status extends BasePlugin {
         })
       ]);
       this.tellraw(`@a`, [
-        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
         { text: `物理内存使用:`, color: "aqua" },
         {
           text: `${(Mem.active / 1024 / 1024).toFixed(2)}M/${(Mem.total / 1024 / 1024).toFixed(2)}M`,
@@ -71,7 +71,7 @@ class Status extends BasePlugin {
         }
       ]);
       this.tellraw(`@a`, [
-        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
         { text: `虚拟内存使用:`, color: "aqua" },
         {
           text: `${(Mem.swapused / 1024 / 1024).toFixed(2)}M/${(Mem.swaptotal / 1024 / 1024).toFixed(2)}M`,
@@ -79,7 +79,7 @@ class Status extends BasePlugin {
         }
       ]);
       this.tellraw(`@a`, [
-        { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+        { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
         { text: `网络:  `, color: "aqua" },
         { text: `${(this.Info.network.rx / 1024).toFixed(2)}KB/s↓   `, color: "green" },
         { text: `${(this.Info.network.tx / 1024).toFixed(2)}KB/s↑`, color: "green" }
@@ -121,7 +121,7 @@ class Status extends BasePlugin {
             }
             if (this.MSPTDiffCount >= 6) {
               this.tellraw(`@a`, [
-                { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+                { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
                 {
                   text: `检测到服务器负载增加`,
                   color: "red",
@@ -131,7 +131,7 @@ class Status extends BasePlugin {
               this.MSPTDiffCount = 0;
             } else if (this.MSPTDiffCount <= -6) {
               this.tellraw(`@a`, [
-                { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+                { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
                 {
                   text: `检测到服务器负载减少`,
                   color: "green",
@@ -146,7 +146,7 @@ class Status extends BasePlugin {
           if (MSPT < 0.5) continue;
           let Color = TPS == 20 ? "green" : TPS > 15 ? "yellow" : "red";
           this.tellraw(`@a`, [
-            { text: `[${moment().format("HH:mm")}]`, color: "yellow", bold: true },
+            { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
             { text: `世界:`, color: "aqua" },
             { text: this.getWorldName(World), color: "green", bold: true },
             { text: ` TPS:`, color: "aqua" },

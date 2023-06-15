@@ -2,7 +2,6 @@ const Rcon = require("rcon-client").Rcon;
 const fs = require("fs-extra");
 const cp = require("child_process");
 const process = require("process");
-const moment = require("moment");
 const ipc = require("@achrinza/node-ipc").default;
 const EventEmitter = require("events");
 const LogFileReader = require(__dirname + "/LogFileReader");
@@ -14,21 +13,21 @@ const runCommand = util.promisify(cp.exec);
 class PluginCore {
   constructor(options) {
     console.log(colors.red(`Plugins Core 启动`));
-    this.RconClient = {};
+    //this.RconClient = {};
+
     this.platform = process.platform;
     this.isForge = options.isForge;
     this.EventBus = new EventEmitter();
-    this.LogFileReader = {};
-    this.MinecraftLogReceivcer = null;
-    this.PluginSettings = options.PluginSettings || {}
-    this.LogFile = options.BaseDir + "/logs/latest.log";
+
+    //this.LogFileReader = {};
+    //this.MinecraftLogReceivcer = null;
+    //this.LogFile = options.BaseDir + "/logs/latest.log";
+    
     this.BaseDir = options.BaseDir;
     this.options = options;
     this.startCommand = options.startCommand || this.BaseDir + "/start";
     this.PendingRestart = false;
-    this.PluginRegisters = [];
-    this.NativeLogProcessers = [];
-    this.PluginInterfaces = new Map();
+    
     this.Crashed = false;
     this.Error = false;
     this.ipc = ipc;
@@ -36,6 +35,11 @@ class PluginCore {
     this.crashDetect();
     this.Crashed = false;
     this.initIpc(options);
+
+    this.PluginSettings = options.PluginSettings || {}
+    this.PluginRegisters = [];
+    this.NativeLogProcessers = [];
+    this.PluginInterfaces = new Map();
     this.addPluginRegister(this.registerNativeLogProcesser, this);
     this.addPluginRegister(this.addPluginRegister, this);
     this.loadBuiltinPlugins();
@@ -224,9 +228,11 @@ class PluginCore {
       }
       Plugin._state = "Paused";
     }
+/*
     if (this.LogFileReader.close) {
       this.LogFileReader.close();
     }
+*/
     if (this.CommandSender && this.CommandSender.cancelAll) {
       this.CommandSender.cancelAll();
     }
