@@ -115,5 +115,5 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-home.json
-LastPositionDb.json
+*.json
+!package.json
