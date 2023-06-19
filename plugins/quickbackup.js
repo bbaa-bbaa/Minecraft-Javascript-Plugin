@@ -49,7 +49,7 @@ class QuickBackup extends BasePlugin {
     Plugin.registerCommand("qb", this.Cli);
     this.Core.EventBus.on("playerlistchange", List => {
       if (List == 0 && !this.Rollbacking) {
-        this.RunBackup(`自动备份-玩家离开-${DateTime.now().toFormat("YY-MM-DD-HH-mm-ss")}`);
+        this.RunBackup(`自动备份-玩家离开-${DateTime.now().toFormat("yyyy-MM-dd-HH-mm-ss")}`);
       }
     });
   }
@@ -58,12 +58,13 @@ class QuickBackup extends BasePlugin {
     let List = [];
     switch (SubCommand) {
       case "list":
-        List = this.getBackupList("wholeWorld");
+        List = await this.getBackupList("wholeWorld");
         let Texts = [
           { text: `服务器上目前有`, color: "yellow" },
           { text: List.length, color: "aqua" },
           { text: `个备份文件\n`, color: "yellow" }
         ];
+        console.log(List)
         for (let [idx, Item] of List.entries()) {
           Texts.push(
             { text: `${idx + 1}.`, color: "aqua" },
@@ -118,7 +119,7 @@ class QuickBackup extends BasePlugin {
           this.Pending = "back";
           this.showPage(0, "wholeWorld", "back");
         } else if (args.length == 2) {
-          let List = this.getBackupList("wholeWorld");
+          let List = await this.getBackupList("wholeWorld");
           List = List.filter(a => a.filename == args[1]);
           if (List.length == 0) {
             this.tellraw("@a", [
@@ -185,7 +186,7 @@ class QuickBackup extends BasePlugin {
           this.Pending = "backpd";
           this.showPage(0, "playerData", "backpd");
         } else if (args.length == 2) {
-          let List = this.getBackupList("playerData");
+          let List = await this.getBackupList("playerData");
           List = List.filter(a => a.filename == args[1]);
           if (List.length == 0) {
             this.tellraw("@a", [
@@ -320,7 +321,7 @@ class QuickBackup extends BasePlugin {
           this.Pending = "delete";
           this.showPage(0, "wholeWorld", "delete");
         } else if (args.length == 2) {
-          let List = this.getBackupList("wholeWorld");
+          let List = await this.getBackupList("wholeWorld");
           List = List.filter(a => a.filename == args[1]);
           if (List.length == 0) {
             this.tellraw("@a", [
@@ -416,7 +417,7 @@ class QuickBackup extends BasePlugin {
     this.Rollbacking = false;
   }
   async getBackupList(list) {
-    let BackupList;
+    let BackupList = [];
     if (list == "wholeWorld") {
       if (!this.onlyCopy) {
         BackupList = (await fs.promises.readdir(this.wholeWorldDest)).map(filename => ({
@@ -583,7 +584,7 @@ class QuickBackup extends BasePlugin {
       ]);
       return;
     }
-    if (new Date().getTime() - this.lastBackup < 600000) {
+    if (/自动备份-/.test(comment) && new Date().getTime() - this.lastBackup < 600000) {
       this.PluginLog("与上次备份间隔小于600秒，消除抖动忽略本次备份");
       await this.tellraw(`@a`, [
         { text: `[${DateTime.now().toFormat("HH:mm:ss")}]`, color: "yellow", bold: true },
@@ -707,7 +708,7 @@ class QuickBackup extends BasePlugin {
     this.schedule = schedule.scheduleJob("0 30 * * * *", async () => {
       if (this.Core.Players.length) {
         await this.cleanBackup();
-        this.RunBackup(`自动备份-${DateTime.now().toFormat("YY-MM-DD-HH-mm-ss")}`)
+        this.RunBackup(`自动备份-${DateTime.now().toFormat("yyyy-MM-dd-HH-mm-ss")}`)
           .then(() => {
             return this.tellraw(`@a`, [
               { text: `如果你正在进行大型项目的建设，可通过命令:\n`, color: "gold", bold: true },
@@ -722,7 +723,7 @@ class QuickBackup extends BasePlugin {
     });
     this.schedule2 = schedule.scheduleJob("0 * * * * *", async () => {
       if (this.Core.Players.length) {
-        this.RunBackupPlayerData(`自动备份-${DateTime.now().toFormat("YY-MM-DD-HH-mm-ss")}`).catch(() => {});
+        this.RunBackupPlayerData(`自动备份-${DateTime.now().toFormat("yyyy-MM-dd-HH-mm-ss")}`).catch(() => {});
       }
     });
     await this.cleanBackup();
