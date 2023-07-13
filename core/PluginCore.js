@@ -156,6 +156,13 @@ class PluginCore {
               "发送启动命令"
             )}`
           );
+          if(!this.options.newVersion) {
+            this.ipc.of["MinecraftManager"].emit("regex",{
+              name:"DedicatedServerMessage",
+              regex:"\\[.*\\]: (.*)$"
+            });
+          }
+          this.ipc.of["MinecraftManager"].emit("path", this.startCommand);
           this.ipc.of["MinecraftManager"].emit("path", this.startCommand);
           this.ipc.of["MinecraftManager"].emit("state");
           break;

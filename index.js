@@ -2,7 +2,7 @@ require('./.pnp.cjs').setup();
 const PluginCore = require("./core/PluginCore");
 const fs = require("fs-extra");
 let Plugines = new PluginCore({
-  BaseDir: "/home/bbaa/MinecraftServer/Minecraft-Server/",
+  BaseDir: "/home/bbaa/MC_Eternal/",
   PluginSettings: {
     QuickBackup: {
       "backupDest": "/tmp/Minecraft-Backup",
@@ -10,8 +10,8 @@ let Plugines = new PluginCore({
     }
   },
  // startCommand: "..\\Minecraft-Server\\start.bat",
-  newVersion: true,
-  isForge: false,
+  newVersion: false,
+  isForge: true,
 
 });
 let List = fs.readdirSync(__dirname + "/plugins");

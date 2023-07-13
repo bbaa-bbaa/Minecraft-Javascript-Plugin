@@ -30,6 +30,12 @@ const GameManager = {
   CommandQueue: [],
   _ReadyWaitId: 0,
   CurrCommand: null,
+  MsgRegEx: {
+    DedicatedServerMessage: /\[.*\]: (.*)$/,
+    PlayerMessage: /\]\: <.*?>.*/,
+    GameLeftMessage: /\w+ (left|joined) the game/,
+    LoginMessage: /\[.*\]:.*? logged in with/
+  },
   async requestCommand(command) {
     command = command.replace(/\n/g, "");
     return new Promise((resolve, reject) => {
@@ -75,6 +81,10 @@ const GameManager = {
     ipc.server.start();
     ipc.server.on("state", () => {
       ipc.server.broadcast("state", this.state);
+    });
+    ipc.server.on("regex", ({name, regex}) => {
+      this.MsgRegEx[name] = new RegExp(regex);
+      console.log(colors.green(`[MinecraftManager]更新Regex[`)+colors.yellow(name)+colors.green("]: ")+colors.yellow(this.MsgRegEx[name].toString()));
     });
     ipc.server.on("startServer", () => {
       console.log(colors.green(`[MinecraftManager]正在请求启动服务器`));
@@ -125,10 +135,14 @@ const GameManager = {
     });
   },
   Start() {
-    this.MinecraftProcess = cp.spawn(this.startCommand, { stdio: ["pipe", "pipe", "ignore"], shell: true, cwd: path.dirname(this.startCommand) });
+    this.MinecraftProcess = cp.spawn(this.startCommand, {
+      stdio: ["pipe", "pipe", "ignore"],
+      shell: true,
+      cwd: path.dirname(this.startCommand)
+    });
     if (process.platform == "win32") {
-      let iconvStream = iconv.decodeStream('GBK');
-      this.MinecraftProcess.stdout.pipe(iconvStream)
+      let iconvStream = iconv.decodeStream("GBK");
+      this.MinecraftProcess.stdout.pipe(iconvStream);
       this.readLine = readline.createInterface({
         input: iconvStream
       });
@@ -174,10 +188,7 @@ const GameManager = {
     if (this.state !== "running") {
       if (this.state == "waitForReady" && /Done \(\d*\.\d*s\)!/.test(message)) {
         this.beforeReady();
-      } else if (
-        this.state == "beforeReady" &&
-        /(Unknown command.|Unknown or incomplete command)/.test(message)
-      ) {
+      } else if (this.state == "beforeReady" && /(Unknown command.|Unknown or incomplete command)/.test(message)) {
         this.Ready();
       } else {
         console.log(message);
@@ -187,21 +198,21 @@ const GameManager = {
 
     if (this.CurrCommand || message.length < 200) {
       let [DedicatedServerMessage, PlayerMessage, GameLeftMessage, LoginMessage] = [
-        /\[.*\]: (.*)$/.test(message),
-        /\]\: <.*?>.*/.test(message),
-        /\w+ (left|joined) the game/.test(message),
-        /\[.*\]:.*? logged in with/.test(message)
+        this.MsgRegExp.DedicatedServerMessage.test(message),
+        this.MsgRegExp.PlayerMessage.test(message),
+        this.MsgRegExp.GameLeftMessage.test(message),
+        this.MsgRegExp.LoginMessage.test(message)
       ];
       if (this.CurrCommand && DedicatedServerMessage && !PlayerMessage && !GameLeftMessage && !LoginMessage) {
         if (this.CurrCommand.timer) clearTimeout(this.CurrCommand.timer);
         let match = /\[.*?\]: (.*)$/.exec(message);
 
-        if (match[1]) {
+        if (match.length == 2) {
           console.log(
             colors.green(`[MinecraftManager]将命令:`) +
-            colors.blue(this.CurrCommand.Command) +
-            colors.green(`的输出储存为:`) +
-            colors.yellow(match[1])
+              colors.blue(this.CurrCommand.Command) +
+              colors.green(`的输出储存为:`) +
+              colors.yellow(match[1])
           );
           this.CurrCommand.buffer.push(match[1].trim());
           this.CurrCommand.timer = setTimeout(() => {

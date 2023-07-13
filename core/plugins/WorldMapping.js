@@ -48,7 +48,9 @@ class WorldsMapping extends BasePlugin {
   }
   async Pause() { }
   async getWorldMapping() {
+    console.log(this.isForge)
     if (this.isForge && !this.newVersion) {
+console.log(2)
       let text = await this.CommandSender("forge dimensions");
       if (!/Currently registered dimensions by type/.test(text)) {
         this.PluginLog("非Forge 多世界游戏，终止映射");
