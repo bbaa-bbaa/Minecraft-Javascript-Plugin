@@ -198,10 +198,10 @@ const GameManager = {
 
     if (this.CurrCommand || message.length < 200) {
       let [DedicatedServerMessage, PlayerMessage, GameLeftMessage, LoginMessage] = [
-        this.MsgRegExp.DedicatedServerMessage.test(message),
-        this.MsgRegExp.PlayerMessage.test(message),
-        this.MsgRegExp.GameLeftMessage.test(message),
-        this.MsgRegExp.LoginMessage.test(message)
+        this.MsgRegEx.DedicatedServerMessage.test(message),
+        this.MsgRegEx.PlayerMessage.test(message),
+        this.MsgRegEx.GameLeftMessage.test(message),
+        this.MsgRegEx.LoginMessage.test(message)
       ];
       if (this.CurrCommand && DedicatedServerMessage && !PlayerMessage && !GameLeftMessage && !LoginMessage) {
         if (this.CurrCommand.timer) clearTimeout(this.CurrCommand.timer);
