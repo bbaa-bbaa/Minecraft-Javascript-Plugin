@@ -73,6 +73,9 @@ const GameManager = {
     this.CurrCommand.timer = setTimeout(() => {
       return this.FinishCommand();
     }, 1000);
+    if (NowCommand == "stop") {
+      this.MinecraftProcess.kill("SIGINT");
+    }
   },
   Init() {
     ipc.config.silent = true;
@@ -82,9 +85,18 @@ const GameManager = {
     ipc.server.on("state", () => {
       ipc.server.broadcast("state", this.state);
     });
-    ipc.server.on("regex", ({name, regex}) => {
-      this.MsgRegEx[name] = new RegExp(regex);
-      console.log(colors.green(`[MinecraftManager]更新Regex[`)+colors.yellow(name)+colors.green("]: ")+colors.yellow(this.MsgRegEx[name].toString()));
+    ipc.server.on("regex", ({ name, regex, flag }) => {
+      if (flag) {
+        this.MsgRegEx[name] = new RegExp(regex, flag);
+      } else {
+        this.MsgRegEx[name] = new RegExp(regex);
+      }
+      console.log(
+        colors.green(`[MinecraftManager]更新Regex[`) +
+          colors.yellow(name) +
+          colors.green("]: ") +
+          colors.yellow(this.MsgRegEx[name].toString())
+      );
     });
     ipc.server.on("startServer", () => {
       console.log(colors.green(`[MinecraftManager]正在请求启动服务器`));
@@ -205,7 +217,7 @@ const GameManager = {
       ];
       if (this.CurrCommand && DedicatedServerMessage && !PlayerMessage && !GameLeftMessage && !LoginMessage) {
         if (this.CurrCommand.timer) clearTimeout(this.CurrCommand.timer);
-        let match = /\[.*?\]: (.*)$/.exec(message);
+        let match = this.MsgRegEx.DedicatedServerMessage.exec(message);
 
         if (match.length == 2) {
           console.log(

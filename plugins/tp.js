@@ -14,11 +14,8 @@ class TelePortCommand extends BasePlugin {
     });
     if (List.length == 1) {
       let Target = List[0];
-      await this.Scoreboard.updateScore(Player, "Health");
-      await this.Scoreboard.updateScore(Target, "Health");
-      let HealthList = await this.getScoreByName("Health");
-      let MyHealth = HealthList[Player];
-      let TargetHealth = HealthList[Target];
+      let MyHealth = await this.Health.getHealthPlayer(Player);
+      let TargetHealth = await this.Health.getHealthPlayer(Target);
       if (MyHealth <= 2) {
         this.tellraw(`${Player}`, [{ text: `濒死状态无法进TP操作`, color: "red", bold: false }]).catch(() => {});
         this.tellraw(`${Target}`, [
@@ -57,13 +54,6 @@ class TelePortCommand extends BasePlugin {
       this.tellraw(`${Player}`, [{ text: "非唯一目标", color: "red", bold: true }]).catch(() => {});
     }
   }
-  async Start() {
-    await this.Scoreboard.ensureScoreboard({
-      name: "Health",
-      type: "health",
-      displayname: "health"
-    });
-    await this.Scoreboard.displayScoreboard("Health", "list");
-  }
+  async Start() {}
 }
 module.exports = TelePortCommand;

@@ -47,7 +47,8 @@ class ChangeColor extends BasePlugin {
   }
   init(Plugin) {
     if (!this.newVersion) {
-      return this.PluginLog(`颜色代码不支持旧版本Minecraft，跳过加载`);
+      this.PluginLog(`颜色代码不支持旧版本Minecraft，跳过加载`);
+      return -1;
     } else {
       this.PluginLog(`新版本模式`)
       Plugin.registerCommand("changecolor", this.colorNew.bind(this));

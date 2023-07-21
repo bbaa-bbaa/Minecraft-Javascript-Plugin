@@ -8,7 +8,9 @@ class PlayerLists extends BasePlugin {
     this.LoopId = 0;
   }
   init(Plugin) {
-    Plugin.registerNativeLogProcesser(/ (left|joined) the game/, () => {this.updatePlayerLists() });
+    Plugin.registerNativeLogProcesser(/ (left|joined) the game/, () => {
+      this.updatePlayerLists();
+    });
     Object.defineProperty(this.Core, "Players", {
       get: () => {
         return this._Players;
@@ -25,29 +27,34 @@ class PlayerLists extends BasePlugin {
     //clearInterval(this.LoopId);
   }
   async updatePlayerLists(first) {
-    let list = await this.CommandSender("list");
-    if (list) {
-      list = list.split(":");
-    } else {
-      return;
-    }
-    if (list.length == 0) {
-      if (this._Players.length !== 0) {
-        this.emit("playerlistchange", this._Players);
+    for (let retry = 0; retry < 3; retry++) {
+      let list = await this.CommandSender("list");
+      if (list) {
+        list = list.split(":");
+      } else {
+        return;
       }
-      this._Players = [];
-      return this._Players;
-
+      if (list.length == 0) {
+        if (this._Players.length !== 0) {
+          this.emit("playerlistchange", this._Players);
+        }
+        this._Players = [];
+        return this._Players;
+      }
+      try {
+        let Players = list[1]
+          .split(",")
+          .map(a => a.trim())
+          .filter(a => a);
+        if (this._Players.length != Players.length && !first) {
+          this.emit("playerlistchange", Players);
+        }
+        this._Players = Players;
+        return this._Players;
+      } catch (e) {
+        
+      }
     }
-    let Players = list[1]
-      .split(",")
-      .map(a => a.trim())
-      .filter(a => a);
-    if (this._Players.length != Players.length && !first) {
-      this.emit("playerlistchange", Players);
-    }
-    this._Players = Players;
-    return this._Players;
   }
 }
 module.exports = PlayerLists;

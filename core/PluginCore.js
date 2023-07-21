@@ -22,12 +22,12 @@ class PluginCore {
     //this.LogFileReader = {};
     //this.MinecraftLogReceivcer = null;
     //this.LogFile = options.BaseDir + "/logs/latest.log";
-    
+
     this.BaseDir = options.BaseDir;
     this.options = options;
     this.startCommand = options.startCommand || this.BaseDir + "/start";
     this.PendingRestart = false;
-    
+
     this.Crashed = false;
     this.Error = false;
     this.ipc = ipc;
@@ -36,7 +36,7 @@ class PluginCore {
     this.Crashed = false;
     this.initIpc(options);
 
-    this.PluginSettings = options.PluginSettings || {}
+    this.PluginSettings = options.PluginSettings || {};
     this.PluginRegisters = [];
     this.NativeLogProcessers = [];
     this.PluginInterfaces = new Map();
@@ -61,6 +61,7 @@ class PluginCore {
     this.registerPlugin(require(__dirname + "/plugins/players.js"));
     this.registerPlugin(require(__dirname + "/plugins/scoreboard.js"));
     this.registerPlugin(require(__dirname + "/plugins/WorldMapping.js"));
+    this.registerPlugin(require(__dirname + "/plugins/health.js"));
     this.registerPlugin(require(__dirname + "/plugins/death.js"));
     this.registerPlugin(require(__dirname + "/plugins/back.js"));
     this.registerPlugin(require(__dirname + "/plugins/Teleport.js"));
@@ -108,7 +109,8 @@ class PluginCore {
     console.log(
       `${colors.yellow("[")}${colors.green("PluginsCore")}${colors.yellow("]")}${colors.magenta(
         scope.constructor.PluginName
-      )} ${colors.yellow("注册了一个原始日志处理器")} ${colors.magenta(func.name || `(anonymous)`)} ${colors.yellow("match:") + colors.magenta("(regex)")
+      )} ${colors.yellow("注册了一个原始日志处理器")} ${colors.magenta(func.name || `(anonymous)`)} ${
+        colors.yellow("match:") + colors.magenta("(regex)")
       }${colors.magenta(regexp.toString())}`
     );
     this.NativeLogProcessers.push({ regexp: regexp, func: func, scope: scope });
@@ -156,13 +158,13 @@ class PluginCore {
               "发送启动命令"
             )}`
           );
-          if(!this.options.newVersion) {
-            this.ipc.of["MinecraftManager"].emit("regex",{
-              name:"DedicatedServerMessage",
-              regex:"\\[.*\\]: (.*)$"
+          if (!this.options.newVersion) {
+            this.ipc.of["MinecraftManager"].emit("regex", {
+              name: "DedicatedServerMessage",
+              regex: "\\[minecraft/DedicatedServer\\]: (.*)$",
+              flag: "m"
             });
           }
-          this.ipc.of["MinecraftManager"].emit("path", this.startCommand);
           this.ipc.of["MinecraftManager"].emit("path", this.startCommand);
           this.ipc.of["MinecraftManager"].emit("state");
           break;
@@ -188,7 +190,7 @@ class PluginCore {
         this.RconClient = Rcon;
         this.RconClient.on("error", this.ErrorHandle.bind(this));
         this.EventBus.emit("connected");
-      })
+      })`
       .catch((e) => {
         this.Error = false;
         this.ErrorHandle(e);
@@ -235,7 +237,7 @@ class PluginCore {
       }
       Plugin._state = "Paused";
     }
-/*
+    /*
     if (this.LogFileReader.close) {
       this.LogFileReader.close();
     }

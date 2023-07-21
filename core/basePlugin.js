@@ -12,6 +12,7 @@ class BasePlugin {
     this.Core = Core;
     const hash = crypto.createHash("sha1");
     this.Scoreboard_Prefix = hash.update(this.constructor.name).digest("hex");
+    this._Scoreboard = null;
   }
   get Settings() {
     return this.Core.PluginSettings[this.constructor.name] || {};
@@ -26,11 +27,12 @@ class BasePlugin {
     return this.Core.EventBus.emit(...a);
   }
   PlayerWarpper(Player) {
-    if (this.newVersion && Player[0]!="@") {
+    if (this.newVersion && Player[0] != "@") {
       return `@a[limit=1,name="${Player}"]`;
-    } else {
-      return Player;
+    } else if (!this.newVersion) {
+      return `@a[c=1,name=${Player}]`;
     }
+    return Player;
   }
   async getPlayerPosition(Player) {
     let pos, dim;
@@ -45,16 +47,18 @@ class BasePlugin {
       dim = Number(Nbt.Dimension);
     } else {
       const entityPosData = await this.CommandSender(`data get entity ${this.PlayerWarpper(Player)} Pos`);
-      console.log(entityPosData)
+      console.log(entityPosData);
       const entityDimensionData = await this.CommandSender(`data get entity ${this.PlayerWarpper(Player)} Dimension`);
       pos = nbttool.parse(entityPosData.substring(entityPosData.indexOf(":") + 1).trim()).map(b => b.toFixed(2));
-      console.log(entityDimensionData.substring(entityDimensionData.indexOf(":") + 1).trim())
+      console.log(entityDimensionData.substring(entityDimensionData.indexOf(":") + 1).trim());
       dim = nbttool.parse(entityDimensionData.substring(entityDimensionData.indexOf(":") + 1).trim()).trim();
     }
     return { pos, dim };
   }
   PluginLog(t) {
-    console.log(`${colors.yellow("[")}${colors.green(this.constructor.PluginName)}${colors.yellow("]")}` + colors.magenta(t));
+    console.log(
+      `${colors.yellow("[")}${colors.green(this.constructor.PluginName)}${colors.yellow("]")}` + colors.magenta(t)
+    );
   }
   getWorldName(a) {
     if (this.newVersion) {
@@ -171,7 +175,7 @@ class BasePlugin {
     for (let [Player, ScoreList] of Object.entries(Score)) {
       NewScore[Player] = {};
       for (let [ScoreName, Score] of Object.entries(ScoreList)) {
-        if (ScoreName.substring(0, 4) == this.Scoreboard_Prefix.substr(0, 4)) {
+        if (ScoreName.substring(0, 4) == this.Scoreboard_Prefix.substring(0, 4)) {
           NewScore[Player][ScoreName.substring(5)] = Score;
         }
       }
@@ -192,6 +196,30 @@ class BasePlugin {
       return 25;
     }
   }
+  get Health() {
+    if (this.Core.PluginInterfaces.has("PlayerHealth")) {
+      let PlayerHealthInterface = this.Core.PluginInterfaces.get("PlayerHealth");
+      return {
+        async updateHealth(PlayerName) {
+          return PlayerHealthInterface.updateHealth(PlayerName);
+        },
+        async HealthList() {
+          return PlayerHealthInterface.HealthList();
+        },
+        async getHealthPlayer(PlayerName) {
+          return PlayerHealthInterface.getHealthPlayer(PlayerName);
+        }
+      };
+    } else {
+      return {
+        updateHealth: Promise.resolve(true),
+        HealthList: async () => {
+          return [];
+        },
+        getHealthPlayer: Promise.resolve(20)
+      };
+    }
+  }
   async getScoreByPlayer(Player) {
     return (await this.getAllScore())[Player];
   }
@@ -200,7 +228,6 @@ class BasePlugin {
     let NewScore = {};
     for (let [Player, ScoreList] of Object.entries(Score)) {
       for (let [ScoreName, Score] of Object.entries(ScoreList)) {
-        console;
         if (ScoreName == Name) {
           NewScore[Player] = Score;
         }
@@ -209,13 +236,15 @@ class BasePlugin {
     return NewScore;
   }
   get Scoreboard() {
-    let Mapping = {};
-    for (let [name, Func] of Object.entries(this.Core.Scoreboard)) {
-      Mapping[name] = (...arg) => {
-        return Func(this, ...arg);
-      };
+    if (!this._Scoreboard) {
+      this._Scoreboard = {};
+      for (let [name, Func] of Object.entries(this.Core.Scoreboard)) {
+        this._Scoreboard[name] = (...arg) => {
+          return Func(this, ...arg);
+        };
+      }
     }
-    return Mapping;
+    return this._Scoreboard;
   }
   get newVersion() {
     return this.Core.options.newVersion || false;

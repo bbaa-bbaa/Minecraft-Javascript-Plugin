@@ -5,8 +5,8 @@ let Plugines = new PluginCore({
   BaseDir: "/home/bbaa/MC_Eternal/",
   PluginSettings: {
     QuickBackup: {
-      "backupDest": "/tmp/Minecraft-Backup",
-      "tmpDir": "/tmp/Minecraft-Backup/tmp",
+      "backupDest": "/data/Minecraft-Backup/Eternal",
+      "tmpDir": "/data/Minecraft-Backup/tmp",
     }
   },
  // startCommand: "..\\Minecraft-Server\\start.bat",

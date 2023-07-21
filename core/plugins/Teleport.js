@@ -20,7 +20,7 @@ class Teleport extends BasePlugin {
       ]);
       return;
     }
-    if (new Date().getTime() - this.lastTeleport < 5000) {
+    if (new Date().getTime() - this.lastTeleport < 2000) {
       this.tellraw(this.SelectorWarpper(Source), [{ text: "与上次TP间隔过短，本次TP取消", color: "red", bold: true }]);
       if (typeof Target != "object") {
         this.tellraw(this.SelectorWarpper(Target), [
@@ -67,22 +67,30 @@ class Teleport extends BasePlugin {
         this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`).catch(() => {});
       } else {
         if (this.Core.Players.indexOf(Target) > -1) {
-          Target = await this.getPlayerPosition(Target).catch(() => {
-            return "crash";
-          });
-          if (Target == "crash") {
-            return;
-          }
-        }
-        this.PluginLog(`执行命令：forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);
-        return this.CommandSender(`forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`).then(
-          changedim => {
-            if (/is already in the dimension specified/.test(changedim)) {
-              this.PluginLog(`执行命令：tp ${this.PlayerWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
-              return this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+          this.PluginLog(`执行命令：tp ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+          let changedim = await this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+          if (/same dimension/.test(changedim)) {
+            Target = await this.getPlayerPosition(Target).catch(() => {
+              return "crash";
+            });
+            if (Target == "crash") {
+              return;
             }
+            this.PluginLog(`执行命令：forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+            return this.CommandSender(`forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);
           }
-        );
+          return changedim;
+        } else {
+          this.PluginLog(`执行命令：forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`);
+          return this.CommandSender(`forge setdim ${this.PlayerWarpper(Source)} ${this.SelectorWarpper(Target)}`).then(
+            changedim => {
+              if (/is already in the dimension specified/.test(changedim)) {
+                this.PluginLog(`执行命令：tp ${this.PlayerWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+                return this.CommandSender(`tp ${this.PlayerWarpper(Source)} ${this.PositionWarpper(Target, true)}`);
+              }
+            }
+          );
+        }
       }
     }
   } /*

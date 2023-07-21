@@ -42,7 +42,9 @@ class CommandSender {
       console.log(
         `${colors.yellow("[")}${colors.green("CommandSender")}${colors.yellow("]命令[")}${colors.red(
           curr.id
-        )}${colors.yellow("]：")}${colors.magenta(curr.command)} ${colors.blue("结果:")}\n${colors.green(result)}`
+        )}${colors.yellow("]：")}${colors.magenta(curr.command)} ${colors.blue("结果:")} ${
+          result ? "\n" + colors.green(result) : "(null)"
+        }`
       );
       curr.resolve(result);
     }

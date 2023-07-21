@@ -81,7 +81,7 @@ class Scoreboard extends BasePlugin {
   }
   async updateScore(scope, player, name) {
     if (!this.newVersion) {
-      if (new Date().getTime() - this.lastSync < 10000) return;
+      if (new Date().getTime() - this.lastSync < 100) return;
       return this.CommandSender(`scoreboard players list *`).then(r => {
         this.lastSync = new Date().getTime();
         r = r.replace(/\n/g, "");
@@ -113,7 +113,7 @@ class Scoreboard extends BasePlugin {
           }
         });
       } else {
-        if (new Date().getTime() - this.lastSync < 10000) return;
+        if (new Date().getTime() - this.lastSync < 1000) return;
         this.PluginLog(`新版MC记分板备用同步方案,记录的记分板列表如下`);
         const ScoreList = Object.keys(this.BoardList);
         console.log(ScoreList);
