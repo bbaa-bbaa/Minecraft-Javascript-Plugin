@@ -756,7 +756,7 @@ class QuickBackup extends BasePlugin {
         .map(a => ({ stats: fs.statSync(this.wholeWorldDest + "/" + a), path: this.wholeWorldDest + "/" + a }))
         .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
       for (let File of ServerFile) {
-        if (new Date().getTime() - File.stats.mtimeMs > 86400000) {
+        if (new Date().getTime() - File.stats.mtimeMs > 86400000 * 2) {
           this.PluginLog("删除备份" + File.path);
           if (this.platform != "win32") {
             await runCommand(`bash -c 'rm -rf "${File.path}"'`).catch(a => "");
