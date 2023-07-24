@@ -1,6 +1,5 @@
 const BasePlugin = require("../core/basePlugin.js");
 const nbttool = require("nbt-ts");
-const pako = require("pako");
 const fs = require("fs-extra");
 function parseText(Text) {
   let Keyword = ["bold", "italic", "underlined", "strikethrough", "obfuscated"];
@@ -53,21 +52,6 @@ class ChangeColor extends BasePlugin {
       this.PluginLog(`新版本模式`)
       Plugin.registerCommand("changecolor", this.colorNew.bind(this));
     }
-  }
-  async colorOld(Player,...args){
-    args = args.join(" ");
-    let uuid = await this.getUUID(Player);
-    await this.CommandSender(`save-all`);
-    let buf = await fs.promises
-      .readFile(`${this.Core.BaseDir}/world/playerdata/${uuid}.dat`)
-      .catch(() => Buffer.allocUnsafe(0));
-    if (!buf.byteLength) return;
-    buf = Buffer.from(pako.inflate(buf));
-    let nbtFileReader = nbttool.decode(buf).value;
-    const SelectedItemSlot = Number(nbtFileReader.SelectedItemSlot);
-    basenbt = nbtFileReader.Inventory.find(a => Number(a.Slot) == SelectedItemSlot);
-    let Tag = basenbt.tag;
-    return;
   }
   async colorNew(Player, ...args) {
     args = args.join(" ");

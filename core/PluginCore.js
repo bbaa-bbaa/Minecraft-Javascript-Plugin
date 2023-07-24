@@ -1,10 +1,8 @@
-const Rcon = require("rcon-client").Rcon;
 const fs = require("fs-extra");
 const cp = require("child_process");
 const process = require("process");
 const ipc = require("@achrinza/node-ipc").default;
 const EventEmitter = require("events");
-const LogFileReader = require(__dirname + "/LogFileReader");
 const MinecraftLogReceivcer = require(__dirname + "/GameManagerLogReceiver");
 const CommandSender = require(__dirname + "/CommandSender");
 const util = require("util");
@@ -13,15 +11,10 @@ const runCommand = util.promisify(cp.exec);
 class PluginCore {
   constructor(options) {
     console.log(colors.red(`Plugins Core 启动`));
-    //this.RconClient = {};
 
     this.platform = process.platform;
     this.isForge = options.isForge;
     this.EventBus = new EventEmitter();
-
-    //this.LogFileReader = {};
-    //this.MinecraftLogReceivcer = null;
-    //this.LogFile = options.BaseDir + "/logs/latest.log";
 
     this.BaseDir = options.BaseDir;
     this.options = options;
@@ -183,33 +176,7 @@ class PluginCore {
       }
     });
   }
-  /*
-  connectRconClient(options) {
-    return Rcon.connect(options.Rcon)
-      .then(Rcon => {
-        this.RconClient = Rcon;
-        this.RconClient.on("error", this.ErrorHandle.bind(this));
-        this.EventBus.emit("connected");
-      })`
-      .catch((e) => {
-        this.Error = false;
-        this.ErrorHandle(e);
-      });
-  }
-  reconnectRcon(name) {
-    this.EventBus.emit("disconnected");
-    console.log(`[${name}]请求重连Rcon`);
-    setTimeout(() => {
-      console.log("[PluginsCore:Rcon]正在重连");
-      this.connectRconClient(this.options);
-    }, 10000);
-  }*/
   Ready() {
-    /*
-    setTimeout(() => {
-      this.LogFileReader = new LogFileReader(this, this.LogFile);
-    }, 1000);
-    */
     if (!this.MinecraftLogReceivcer)
       setTimeout(() => {
         this.MinecraftLogReceivcer = new MinecraftLogReceivcer(this, this.ipc.of["MinecraftManager"]);
@@ -237,11 +204,6 @@ class PluginCore {
       }
       Plugin._state = "Paused";
     }
-    /*
-    if (this.LogFileReader.close) {
-      this.LogFileReader.close();
-    }
-*/
     if (this.CommandSender && this.CommandSender.cancelAll) {
       this.CommandSender.cancelAll();
     }

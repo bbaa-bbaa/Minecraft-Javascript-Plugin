@@ -26,7 +26,7 @@ const _WorldMapping = {
   abyss: "深渊",
   twilight_forest: "暮色森林",
   nether: "地狱",
-  Overall: "整个Minecraft",
+  Overall: "整个Minecraft"
 };
 let WorldMapping = {};
 for (let [name, value] of Object.entries(_WorldMapping)) {
@@ -46,7 +46,7 @@ class WorldsMapping extends BasePlugin {
   async Start() {
     return this.getWorldMapping();
   }
-  async Pause() { }
+  async Pause() {}
   async getWorldMapping() {
     if (this.isForge && !this.newVersion) {
       let text = await this.CommandSender("forge dimensions");
@@ -70,10 +70,9 @@ class WorldsMapping extends BasePlugin {
         }
       }
       this.PluginLog(`映射完成，共${Object.keys(this.WorldMapping.id).length}个世界`);
-    } else if(this.newVersion) {
+    } else if (this.newVersion) {
       this.PluginLog("新版本游戏，无需映射");
     }
-    
   }
 }
-module.exports=WorldsMapping;
+module.exports = WorldsMapping;
