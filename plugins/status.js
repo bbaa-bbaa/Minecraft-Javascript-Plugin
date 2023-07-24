@@ -72,31 +72,11 @@ class Status extends BasePlugin {
     this._LastMspt.push(MinecraftLoad["Overall"].MSPT);
     let K = Status.leastsquares(this._LastMspt);
     this.PluginLog(`负载异动:${K} MSPT:${this.MSPT} TPS:${MinecraftLoad["Overall"].TPS}`);
-    this.PluginLog(`LastMSPT: ${this._LastMspt.join(", ")}`);
-    
-    let Edge = 0;
-    for (let [idx, MSPT] of this._LastMspt.entries()) {
-      if (!idx) continue;
-      let edge = Math.sign(MSPT - this._LastMspt[idx - 1]);
-      if (edge === 0) {
-        Edge += Math.sign(edge);
-      } else if (Math.sign(Edge) != edge) {
-        Edge = edge;
-      } else {
-        Edge += edge;
-      }
-    }
-    let DiffCount = Math.abs(Edge);
-    if (DiffCount >= 3) {
-      this.PluginLog(`负载异动:${Edge} MSPT:${this.MSPT} TPS:${MinecraftLoad["Overall"].TPS}`);
-      this.PluginLog(`LastMSPT: ${this._LastMspt.join(", ")}`);
-      let Start = this._LastMspt[this._LastMspt.length - 1 - Math.abs(DiffCount)];
-      if (Math.abs(Start - this.MSPT) > 8) {
-        //Edge=0;
-        if (this.LastBroadcast == Start) {
-          if (DiffCount % 2 !== 0) return;
-        }
-        if (Edge > 0) {
+    this.PluginLog(`LastMSPT: ${this._LastMspt.join(", ")} LastBoardcast:${this.LastBroadcast}`);
+    if (Math.abs(K) > 2.0) {
+      if (Math.abs(Math.max(...this._LastMspt) - Math.min(...this._LastMspt)) > 5) {
+        if (K > 0 && Math.abs(Math.max(...this._LastMspt) - this.LastBroadcast) > 10) {
+          this.LastBroadcast = Math.max(...this._LastMspt);
           this.tellraw(`@a`, [
             { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
             {
@@ -105,7 +85,8 @@ class Status extends BasePlugin {
               bold: true
             }
           ]);
-        } else {
+        } else if (K < 0 && Math.abs(Math.min(...this._LastMspt) - this.LastBroadcast) > 10) {
+          this.LastBroadcast = Math.min(...this._LastMspt);
           this.tellraw(`@a`, [
             { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
             {
@@ -114,6 +95,8 @@ class Status extends BasePlugin {
               bold: true
             }
           ]);
+        } else {
+          return;
         }
         let Color = MinecraftLoad["Overall"].TPS == 20 ? "green" : MinecraftLoad["Overall"].TPS > 15 ? "yellow" : "red";
         this.tellraw(`@a`, [
@@ -126,10 +109,8 @@ class Status extends BasePlugin {
           { text: ` 负载:`, color: "aqua" },
           { text: `${((this.MSPT / 50) * 100).toFixed(2)}%`, color: Color }
         ]);
-        this.LastBroadcast = Start;
       }
     }
-    
   }
   async status() {
     this.tellraw("@a", [
