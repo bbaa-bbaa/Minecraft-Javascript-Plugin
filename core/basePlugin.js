@@ -191,7 +191,7 @@ class BasePlugin {
   }
   get MSPT() {
     if (this.Core.PluginInterfaces.has("Status")) {
-      return this.Core.PluginInterfaces.get("Status").LastMspt;
+      return this.Core.PluginInterfaces.get("Status").MSPT;
     } else {
       return 25;
     }

@@ -334,13 +334,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cpu@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "cpu@npm:1.0.1"
-  checksum: 2a5405c8f7c2f957bccc84b5b1adb5d9d9b1e3f52c93bbdc21c89df3f11ed0c9054bd79d1624f5c5f8e710fe43e5ef277ddd14a7a0f4a194cb946b2472115519
-  languageName: node
-  linkType: hard
-
 "cron-parser@npm:^3.5.0":
   version: 3.5.0
   resolution: "cron-parser@npm:3.5.0"
@@ -849,7 +842,6 @@ __metadata:
     "@types/node": ^17.0.13
     "@types/node-ipc": ^9.2.0
     chokidar: ^3.5.3
-    cpu: ^1.0.1
     fs-extra: ^9.1.0
     iconv-lite: ^0.6.3
     klaw: ^4.1.0
@@ -859,7 +851,7 @@ __metadata:
     node-schedule: ^2.0.0
     pako: ^2.0.4
     rcon-client: ^4.2.3
-    systeminformation: ^5.6.10
+    systeminformation: ^5.18.7
     typescript: ^4.7.4
     uuid: ^8.3.2
   languageName: unknown
@@ -1280,12 +1272,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"systeminformation@npm:^5.6.10":
-  version: 5.11.21
-  resolution: "systeminformation@npm:5.11.21"
+"systeminformation@npm:^5.18.7":
+  version: 5.18.7
+  resolution: "systeminformation@npm:5.18.7"
   bin:
     systeminformation: lib/cli.js
-  checksum: 4cd9a7fee381e0e8c8998c7f73a9023074672698b0d5713ff2e8b2b2faed3ffe228fffbb02dc8420971eaa1ed3f6dd88c8d513d3445ce3b098838eff7284fbee
+  checksum: 05c540fef599e899cfc5c9e7c81f622914619c0c1dcf8be8641a3f1ddc7df0c7f885cf2783c021a1261d80b57eca50d51dff13b00b3c70a06fa935a784839dd3
   conditions: (os=darwin | os=linux | os=win32 | os=freebsd | os=openbsd | os=netbsd | os=sunos | os=android)
   languageName: node
   linkType: hard

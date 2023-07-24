@@ -64,7 +64,7 @@ class QuickBackup extends BasePlugin {
           { text: List.length, color: "aqua" },
           { text: `个备份文件\n`, color: "yellow" }
         ];
-        console.log(List)
+        console.log(List);
         for (let [idx, Item] of List.entries()) {
           Texts.push(
             { text: `${idx + 1}.`, color: "aqua" },
@@ -623,6 +623,7 @@ class QuickBackup extends BasePlugin {
       for await (const file of klaw(`${this.wholeWorldDest}/${FileName}`)) {
         size += file.stats.size || 0;
       }
+      size = size / 1024 / 1024;
       await this.tellraw(`@a`, [
         { text: `[${DateTime.now().toFormat("HH:mm:ss")}]`, color: "yellow", bold: true },
         { text: `存档复制完成 存档大小：`, color: "aqua" },

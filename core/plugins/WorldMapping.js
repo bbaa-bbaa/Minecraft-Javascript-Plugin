@@ -1,6 +1,5 @@
 const _WorldMapping = {
   overworld: "主世界",
-  Overall: "所有",
   vox_ponds: "未知",
   the_nether: "地狱",
   candyland: "糖果",
@@ -26,7 +25,8 @@ const _WorldMapping = {
   haven: "天堂",
   abyss: "深渊",
   twilight_forest: "暮色森林",
-  nether: "地狱"
+  nether: "地狱",
+  Overall: "整个Minecraft",
 };
 let WorldMapping = {};
 for (let [name, value] of Object.entries(_WorldMapping)) {
