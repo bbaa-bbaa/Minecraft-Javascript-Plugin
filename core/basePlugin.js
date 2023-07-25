@@ -128,46 +128,8 @@ class BasePlugin {
       Dest = `@e[name="${Dest}",type=minecraft:player]`;
     }
     let startWith = `tellraw ${Dest} `;
-    let newJson = [[]];
-    for (let Item of Json) {
-      if (/^\n/.test(Item.text) && /\n$/.test(Item.text)) {
-        Item.text = Item.text.toString().replace(/^\n/, "");
-        newJson.push([Item]);
-      } else if (/\n$/.test(Item.text)) {
-        Item.text = Item.text.toString().replace(/\n$/, "");
-        newJson[newJson.length - 1].push(Item);
-        newJson.push([]);
-      } else if (/^\n/.test(Item.text)) {
-        Item.text = Item.text.toString().replace(/^\n/, "");
-        newJson.push([Item]);
-      } else if (Item instanceof Array) {
-        for (let it of Item) {
-          if (/^\n/.test(it.text) && /\n$/.test(it.text)) {
-            it.text = it.text.toString().replace(/^\n/, "");
-            newJson.push([it]);
-          } else if (/\n$/.test(it.text)) {
-            it.text = it.text.toString().replace(/\n$/, "");
-            newJson[newJson.length - 1].push(it);
-            newJson.push([]);
-          } else if (/^\n/.test(it.text)) {
-            it.text = it.text.toString().replace(/^\n/, "");
-            newJson.push([it]);
-          } else {
-            it.text = it.text.toString();
-            newJson[newJson.length - 1].push(it);
-          }
-        }
-      } else {
-        Item.text = Item.text.toString();
-        if (Item.text.trim()) {
-          newJson[newJson.length - 1].push(Item);
-        }
-      }
-    }
-    for (let msg of newJson) {
-      msg.unshift({ text: `[${this.constructor.PluginName}]`, color: "green", bold: true });
-      await this.CommandSender(startWith + JSON.stringify(msg));
-    }
+    Json.unshift({ text: `[${this.constructor.PluginName}]`, color: "green", bold: true });
+    await this.CommandSender(startWith + JSON.stringify(Json));
   }
   async getAllScore() {
     let Score = this.Core.PluginInterfaces.get("Scoreboard").Scores;

@@ -121,7 +121,7 @@ class Status extends BasePlugin {
     ]);
     this.tellraw("@a", [
       { text: "============= ", color: "yellow" },
-      { text: "CPU", color: "pink" },
+      { text: "CPU", color: "light_purple" },
       { text: " =============", color: "yellow" }
     ]);
     for (let [idx, CPU] of this.Info.cpu.entries()) {
@@ -145,12 +145,14 @@ class Status extends BasePlugin {
         }
       ]);
     }
-    let CPUFan_RPM = Number(await fs.promises.readFile("/sys/class/hwmon/hwmon3/fan2_input"));
-    this.tellraw("@a", [
-      { text: `CPU Fan: `, color: "yellow" },
-      { text: CPUFan_RPM.toString(), color: CPUFan_RPM < 833 ? "green" : CPUFan_RPM < 1167 ? "yellow" : "red" },
-      { text: ` RPM`, color: "green" }
-    ]);
+    try {
+      let CPUFan_RPM = Number(await fs.promises.readFile("/sys/class/hwmon/hwmon3/fan2_input"));
+      this.tellraw("@a", [
+        { text: `CPU Fan: `, color: "yellow" },
+        { text: CPUFan_RPM.toString(), color: CPUFan_RPM < 833 ? "green" : CPUFan_RPM < 1167 ? "yellow" : "red" },
+        { text: ` RPM`, color: "green" }
+      ]);
+    } catch (e) {}
     let Memory = await si.mem();
     this.tellraw("@a", [
       { text: "============= ", color: "yellow" },

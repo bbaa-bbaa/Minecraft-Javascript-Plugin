@@ -82,8 +82,10 @@ class Home extends BasePlugin {
       if (MatchHomes.length) {
         this.tellraw(Player, [
           { text: `没有设置家 `, color: "yellow" },
-          { text: `「${homename}」`, color: "red" },
-          { text: "\n为你模糊匹配到家", color: "yellow" },
+          { text: `「${homename}」`, color: "red" }
+        ]);
+        this.tellraw(Player, [
+          { text: "为你模糊匹配到家", color: "yellow" },
           { text: `「${MatchHomes[0]}」`, color: "green" },
           { text: " 两秒后传送", color: "yellow" }
         ]);
