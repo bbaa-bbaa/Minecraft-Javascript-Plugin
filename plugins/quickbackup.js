@@ -641,7 +641,6 @@ class QuickBackup extends BasePlugin {
       }
     });
     await this.cleanBackup();
-    this.MakeBackupPlayerData(`自动备份-${DateTime.now().toFormat("yyyy-MM-dd-HH-mm-ss")}`).catch(() => {});
     return this.tellraw(`@a`, [
       { text: `如果你正在进行大型项目的建设，可通过命令:\n`, color: "gold", bold: true },
       { text: "!!qb", color: "yellow" },
