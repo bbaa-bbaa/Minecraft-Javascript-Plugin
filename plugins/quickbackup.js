@@ -228,21 +228,15 @@ class QuickBackup extends BasePlugin {
   async getBackupList(list) {
     let BackupList = [];
     if (list == "wholeWorld") {
-      if (this.onlyCopy) {
-        BackupList = (await fs.promises.readdir(this.wholeWorldDest)).map(filename => ({
-          filename,
-          path: path.join(this.wholeWorldDest, filename)
-        }));
-        for (let tmp of BackupList) {
-          tmp.stats = await fs.promises.stat(tmp.path);
-        }
-      } else {
-        BackupList = (await fs.promises.readdir(this.wholeWorldDest)).map(filename => ({
-          filename: filename.split(".")[0],
-          path: path.join(this.wholeWorldDest, filename)
-        }));
-        for (let tmp of BackupList) {
-          tmp.stats = await fs.promises.stat(tmp.path);
+      BackupList = (await fs.promises.readdir(this.wholeWorldDest)).map(filename => ({
+        filename: filename,
+        path: path.join(this.wholeWorldDest, filename),
+        stats: null
+      }));
+      for (let tmp of BackupList) {
+        tmp.stats = await fs.promises.stat(tmp.path);
+        if (tmp.stats.isFile()) {
+          tmp.filename = tmp.filename.split(".")[0];
         }
       }
     } else if (list == "playerData") {
@@ -619,7 +613,7 @@ class QuickBackup extends BasePlugin {
     return Promise.resolve();
   }
   async Start() {
-    this.Tasks.wholeWorld = schedule.scheduleJob("0 */10 * * * *", async () => {
+    this.Tasks.wholeWorld = schedule.scheduleJob("0 */30 * * * *", async () => {
       if (this.Core.Players.length) {
         await this.cleanBackup();
         this.MakeBackup(`自动备份-${DateTime.now().toFormat("yyyy-MM-dd-HH-mm-ss")}`)
