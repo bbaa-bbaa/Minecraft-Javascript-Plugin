@@ -1,4 +1,4 @@
-let BasePlugin = require(__dirname + "/../basePlugin.js");
+let BasePlugin = require("../basePlugin.js");
 const nbttool = require("nbt-ts");
 class Teleport extends BasePlugin {
   static PluginName = "传送内核插件";
@@ -12,7 +12,7 @@ class Teleport extends BasePlugin {
     };
   }
   async Teleport(Source, Target) {
-    if (this.MSPT > 80) {
+    if (this.MSPT > 65) {
       this.tellraw("@a", [
         { text: "服务器状态异常，本次TP取消 ", color: "red", bold: true },
         { text: "服务器负载：", color: "yellow", bold: true },

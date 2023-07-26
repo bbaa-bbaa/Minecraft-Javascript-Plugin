@@ -1,4 +1,4 @@
-const BasePlugin = require(__dirname + "/../basePlugin.js");
+const BasePlugin = require("../basePlugin.js");
 
 class PlayerLists extends BasePlugin {
   static PluginName = "玩家数量";

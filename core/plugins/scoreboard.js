@@ -1,4 +1,4 @@
-let BasePlugin = require(__dirname + "/../basePlugin.js");
+let BasePlugin = require("../basePlugin.js");
 const crypto = require("crypto");
 const _ = require("lodash");
 class Scoreboard extends BasePlugin {
@@ -88,16 +88,18 @@ class Scoreboard extends BasePlugin {
         r = r.replace(/Player \w+ has no scores recorded/g, "");
         let regexp = /Showing \d+ tracked objective\(s\) for (\w+):(.*?)(?=Showing|$)/g;
         let player;
+        let Scores = {};
         while ((player = regexp.exec(r))) {
           let [_unuse, playername, scoreitem] = player;
-          this.Scores[playername] = {};
+          Scores[playername] = {};
           let subregexp = /- .+?: (\d+) \((\w+)\)/g;
           let item;
           while ((item = subregexp.exec(scoreitem))) {
             let [__unuse, score, name] = item;
-            this.Scores[playername][name] = Number(score);
+            Scores[playername][name] = Number(score);
           }
         }
+        this.Scores = Scores;
       });
     } else {
       if (name && player) {
@@ -107,7 +109,7 @@ class Scoreboard extends BasePlugin {
           if (!/^.*? has (\d+)/.test(c)) return Promise.resolve();
           let score = Number(c.match(/^.*? has (\d+)/)[1]);
           if (!isNaN(score)) {
-            if(!this.Scores[player]) this.Scores[player]={};
+            if (!this.Scores[player]) this.Scores[player] = {};
             this.Scores[player][name] = score;
             this.PluginLog(`玩家:${player} 的 ${name} 记分项值为:${score}`);
           }

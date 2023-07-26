@@ -64,52 +64,50 @@ class Status extends BasePlugin {
     return (xySum - series.length * xAvg * yAvg) / (xSquareSum - series.length * Math.pow(xAvg, 2));
   }
   async monitor() {
+    let MinecraftLoad = await this.getMinecraftLoad();
+    if (!MinecraftLoad["Overall"]) return;
     if (this._LastMspt.length == 4) {
       this._LastMspt.shift();
     }
-    let MinecraftLoad = await this.getMinecraftLoad();
-    if (!MinecraftLoad["Overall"]) return;
     this._LastMspt.push(MinecraftLoad["Overall"].MSPT);
     let K = Status.leastsquares(this._LastMspt);
     this.PluginLog(`负载异动:${K} MSPT:${this.MSPT} TPS:${MinecraftLoad["Overall"].TPS}`);
     this.PluginLog(`LastMSPT: ${this._LastMspt.join(", ")} LastBoardcast:${this.LastBroadcast}`);
     if (Math.abs(K) > 2.0) {
-      if (Math.abs(Math.max(...this._LastMspt) - Math.min(...this._LastMspt)) > 5) {
-        if (K > 0 && Math.abs(Math.max(...this._LastMspt) - this.LastBroadcast) > 10) {
-          this.LastBroadcast = Math.max(...this._LastMspt);
-          this.tellraw(`@a`, [
-            { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
-            {
-              text: `检测到服务器负载增加`,
-              color: "red",
-              bold: true
-            }
-          ]);
-        } else if (K < 0 && Math.abs(Math.min(...this._LastMspt) - this.LastBroadcast) > 10) {
-          this.LastBroadcast = Math.min(...this._LastMspt);
-          this.tellraw(`@a`, [
-            { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
-            {
-              text: `检测到服务器负载减少`,
-              color: "green",
-              bold: true
-            }
-          ]);
-        } else {
-          return;
-        }
-        let Color = MinecraftLoad["Overall"].TPS == 20 ? "green" : MinecraftLoad["Overall"].TPS > 15 ? "yellow" : "red";
+      if (K > 0 && Math.abs(Math.max(...this._LastMspt) - this.LastBroadcast) > 8) {
+        this.LastBroadcast = Math.max(...this._LastMspt);
         this.tellraw(`@a`, [
-          { text: `世界:`, color: "aqua" },
-          { text: this.getWorldName("Overall"), color: "green", bold: true },
-          { text: ` TPS:`, color: "aqua" },
-          { text: MinecraftLoad["Overall"].TPS, color: Color },
-          { text: ` MSPT:`, color: "aqua" },
-          { text: this.MSPT + "ms", color: Color },
-          { text: ` 负载:`, color: "aqua" },
-          { text: `${((this.MSPT / 50) * 100).toFixed(2)}%`, color: Color }
+          { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
+          {
+            text: `检测到服务器负载增加`,
+            color: "red",
+            bold: true
+          }
         ]);
+      } else if (K < 0 && Math.abs(Math.min(...this._LastMspt) - this.LastBroadcast) > 8) {
+        this.LastBroadcast = Math.min(...this._LastMspt);
+        this.tellraw(`@a`, [
+          { text: `[${DateTime.now().toFormat("HH:mm")}]`, color: "yellow", bold: true },
+          {
+            text: `检测到服务器负载减少`,
+            color: "green",
+            bold: true
+          }
+        ]);
+      } else {
+        return;
       }
+      let Color = MinecraftLoad["Overall"].TPS == 20 ? "green" : MinecraftLoad["Overall"].TPS > 15 ? "yellow" : "red";
+      this.tellraw(`@a`, [
+        { text: `世界:`, color: "aqua" },
+        { text: this.getWorldName("Overall"), color: "green", bold: true },
+        { text: ` TPS:`, color: "aqua" },
+        { text: MinecraftLoad["Overall"].TPS, color: Color },
+        { text: ` MSPT:`, color: "aqua" },
+        { text: this.MSPT + "ms", color: Color },
+        { text: ` 负载:`, color: "aqua" },
+        { text: `${((this.MSPT / 50) * 100).toFixed(2)}%`, color: Color }
+      ]);
     }
   }
   async status() {

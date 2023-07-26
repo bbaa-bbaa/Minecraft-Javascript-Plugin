@@ -32,7 +32,7 @@ let WorldMapping = {};
 for (let [name, value] of Object.entries(_WorldMapping)) {
   WorldMapping[name.toUpperCase()] = value;
 }
-const BasePlugin = require(__dirname + "/../basePlugin.js");
+const BasePlugin = require("../basePlugin.js");
 
 class WorldsMapping extends BasePlugin {
   static PluginName = "世界序号映射";

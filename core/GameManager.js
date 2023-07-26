@@ -8,6 +8,7 @@ const _ = require("lodash");
 const iconv = require("iconv-lite");
 let waitMessage = 15;
 const skipWaitCommand = ["tellraw"];
+const WaitForRegexCommand = { "save-all": /Saved the world/i };
 class CommanderTask {
   constructor(command, resolve, reject) {
     this.Command = command;
@@ -227,9 +228,15 @@ const GameManager = {
               colors.yellow(match[1])
           );
           this.CurrCommand.buffer.push(match[1].trim());
-          this.CurrCommand.timer = setTimeout(() => {
-            return this.FinishCommand();
-          }, waitMessage);
+          if (WaitForRegexCommand[this.CurrCommand.Command]) {
+            if(WaitForRegexCommand[this.CurrCommand.Command].test(match[1])) {
+              return this.FinishCommand();
+            }
+          } else {
+            this.CurrCommand.timer = setTimeout(() => {
+              return this.FinishCommand();
+            }, waitMessage);
+          }
         } else {
           console.log(`[MinecraftManager]未知输出:` + colors.red(message));
         }

@@ -1,4 +1,4 @@
-const BasePlugin = require(__dirname+"/../basePlugin.js")
+const BasePlugin = require("../basePlugin.js")
 class simpleCommand extends BasePlugin {
   static PluginName = "简单命令"
   constructor(){

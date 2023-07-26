@@ -203,6 +203,7 @@ class QuickBackup extends BasePlugin {
     this.Tasks = {};
     this.Lock = {
       Backup: false,
+      BackupPlayerData: false,
       Rollback: false,
       lastBackupTime: 0
     };
@@ -409,6 +410,8 @@ class QuickBackup extends BasePlugin {
     }
   }
   async MakeBackup(name, auto = false) {
+    name = name.replace(/(["\s'$`\\])/g, "\\$1");
+    this.PluginLog(`[${DateTime.now().toFormat("HH:mm:ss")}]运行备份 备注:${name}`);
     this.tellraw("@a", [
       { text: "============= ", color: "yellow" },
       { text: "整世界备份", color: "light_purple" },
@@ -428,8 +431,6 @@ class QuickBackup extends BasePlugin {
     }
     this.Lock.Backup = true;
     this.Lock.lastBackupTime = new Date().getTime();
-    name = name.replace(/(["\s'$`\\])/g, "\\$1");
-    this.PluginLog(`[${DateTime.now().toFormat("HH:mm:ss")}]运行备份 备注:${name}`);
     let FileName = this.onlyCopy ? `${name}` : `${name}.tar.zst`;
     let Path = `${this.tmpDir}/Minecraft/${FileName}`;
     await this.tellraw(`@a`, [
@@ -437,6 +438,7 @@ class QuickBackup extends BasePlugin {
       { text: "请勿快速移动", color: "red" }
     ]);
     await this.CommandSender("save-all");
+
     await this.tellraw(`@a`, [{ text: "存档保存成功", color: "green" }]);
     if (this.onlyCopy) {
       await fs.ensureDir(`${this.wholeWorldDest}/${FileName}`);
@@ -500,6 +502,12 @@ class QuickBackup extends BasePlugin {
   async MakeBackupPlayerData(comment) {
     comment = comment.replace(/(["\s'$`\\])/g, "\\$1");
     this.PluginLog(`[${DateTime.now().toFormat("HH:mm:ss")}]运行玩家数据备份 备注:${comment}`);
+    if (this.Lock.BackupPlayerData) {
+      this.PluginLog("已有正在进行的备份进程");
+      this.PluginLog("本次备份操作取消");
+      return;
+    }
+    this.Lock.BackupPlayerData = true;
     let FileName = `${comment}`;
     let ServerFile = (await fs.promises.readdir(this.PlayerDataDest)).map(filename => ({
       filename,
@@ -524,6 +532,7 @@ class QuickBackup extends BasePlugin {
         .catch(e => console.error(e));
     }
     this.PluginLog(`[${DateTime.now().toFormat("HH:mm:ss")}]完成玩家数据备份`);
+    this.Lock.BackupPlayerData = false;
   }
 
   async Rollback(backfile, requester) {
@@ -584,30 +593,17 @@ class QuickBackup extends BasePlugin {
     }, 3000);
   }
   async cleanBackup() {
-    if (!this.onlyCopy) {
-      let ServerFile = (await fs.promises.readdir(this.wholeWorldDest)).map(filename => ({
-        filename,
-        path: path.join(this.wholeWorldDest, filename)
-      }));
-      for (let tmp of ServerFile) {
-        tmp.stats = await fs.promises.stat(tmp.path);
-      }
-      ServerFile = ServerFile.sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
-      for (let File of ServerFile) {
-        if (new Date().getTime() - File.stats.mtimeMs > 86400000 * 2) {
-          await fs.unlink(File.path);
-        }
-      }
-    } else {
-      let ServerFile = await fs.promises.readdir(this.wholeWorldDest);
-      ServerFile = ServerFile.filter(a => /自动备份-/.test(a))
-        .map(a => ({ stats: fs.statSync(this.wholeWorldDest + "/" + a), path: this.wholeWorldDest + "/" + a }))
-        .sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
-      for (let File of ServerFile) {
-        if (new Date().getTime() - File.stats.mtimeMs > 86400000 * 2) {
-          this.PluginLog("删除备份" + File.path);
-          await fs.remove(File.path);
-        }
+    let ServerFile = (await fs.promises.readdir(this.wholeWorldDest)).map(filename => ({
+      filename,
+      path: path.join(this.wholeWorldDest, filename)
+    }));
+    for (let tmp of ServerFile) {
+      tmp.stats = await fs.promises.stat(tmp.path);
+    }
+    ServerFile = ServerFile.sort((a, b) => b.stats.mtimeMs - a.stats.mtimeMs);
+    for (let File of ServerFile) {
+      if (new Date().getTime() - File.stats.mtimeMs > 86400000 * 2) {
+        await fs.remove(File.path);
       }
     }
     return Promise.resolve();
